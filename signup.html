@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign up · UCLA Foodie Daily</title>
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <main class="wrap">
+    <nav class="nav">
+      <a class="brand" href="index.html">UCLA FOODIE DAILY</a>
+      <a href="index.html">Home</a>
+    </nav>
+    <h1>UCLA Foodie Daily — Sign Up</h1>
+    <p class="lede">Get a daily email showing which dining hall has your favorite foods (and height-boosting picks when they're not on the menu).</p>
+    <form class="card" id="signup">
+      <label>Email
+        <input name="email" type="email" required placeholder="you@g.ucla.edu" autocomplete="email">
+      </label>
+      <label>Foods you want
+        <input name="foods" required placeholder="beef, salmon, tiramisu">
+      </label>
+      <label>If not available, what should we recommend? (optional)
+        <input name="pref" placeholder="e.g. seafood, digestion, grow taller">
+      </label>
+      <button type="submit">Subscribe</button>
+      <p id="result" hidden></p>
+    </form>
+  </main>
+  <script>
+    document.getElementById("signup").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      const row = {
+        email: String(data.get("email") || "").trim(),
+        foods: String(data.get("foods") || "").trim(),
+        pref: String(data.get("pref") || "").trim(),
+      };
+      const result = document.getElementById("result");
+      result.hidden = false;
+      result.className = "ok";
+      result.textContent = "You're subscribed! You'll get your first personalized dining pick tomorrow morning at 7am. This copy only saves that on this browser — it does not email yet.";
+      const key = "foodie-daily-local";
+      const existing = JSON.parse(localStorage.getItem(key) || "[]").filter(function (item) {
+        return item.email.toLowerCase() !== row.email.toLowerCase();
+      });
+      existing.push(row);
+      localStorage.setItem(key, JSON.stringify(existing));
+    });
+  </script>
+</body>
+</html>
