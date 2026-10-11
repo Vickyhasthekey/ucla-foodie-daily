@@ -56,19 +56,34 @@ def page(request, name, context, status_code=200):
     return templates.TemplateResponse(request, name, context, status_code=status_code)
 
 
+def home_page(request, wish, error=""):
+    user = viewer(request)
+    menu_date = la_today()
+    return page(
+        request,
+        "home.html",
+        {
+            "wish": wish,
+            "error": error,
+            "plan": day_plan(user["id"], menu_date) if user else [],
+            "date_label": la_label(menu_date),
+        },
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, wish: str = ""):
     user = viewer(request)
     if not wish and user and user["foods"]:
         wish = user["foods"]
-    return page(request, "home.html", {"wish": wish, "error": ""})
+    return home_page(request, wish)
 
 
 @app.post("/", response_class=HTMLResponse)
 def home_submit(request: Request, wish: str = Form("")):
     wish = wish.strip()
     if not wish:
-        return page(request, "home.html", {"wish": "", "error": "Type a few foods."})
+        return home_page(request, "", "Type a few foods.")
     user = viewer(request)
     if user:
         save_wish(user["email"], wish)

@@ -6,4 +6,15 @@
   <input name="wish" required placeholder="beef, salmon, tiramisu" aria-label="Foods" value="{{ wish }}">
   <button type="submit">See today's hall</button>
 </form>
+{% if plan %}
+<div class="card">
+  <strong>Your plan</strong>
+  <p class="meta">{{ date_label }}</p>
+  <ul class="plan">
+    {% for item in plan %}
+    <li>{{ item.meal }} — {{ item.hall }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
 {% endblock %}
