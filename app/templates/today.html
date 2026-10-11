@@ -56,4 +56,19 @@
 {% endif %}
 
 <p class="note"><a href="/?wish={{ wish_query }}">Change it</a></p>
+<script>
+document.querySelectorAll("label.meal-hall input[type=radio]").forEach((radio) => {
+  radio.dataset.on = radio.checked ? "1" : "0";
+  radio.addEventListener("click", () => {
+    if (radio.dataset.on === "1") {
+      radio.checked = false;
+      radio.dataset.on = "0";
+      return;
+    }
+    document.querySelectorAll("label.meal-hall input[type=radio]").forEach((other) => {
+      if (other.name === radio.name) other.dataset.on = other === radio ? "1" : "0";
+    });
+  });
+});
+</script>
 {% endblock %}
