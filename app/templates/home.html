@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Find your matching dining hall today.</h1>
+{% if error %}<p class="warn">{{ error }}</p>{% endif %}
+<form class="card" method="post" action="/">
+  <input name="wish" required placeholder="beef, salmon, tiramisu" aria-label="Foods" value="{{ wish }}">
+  <button type="submit">See today's hall</button>
+</form>
+{% endblock %}

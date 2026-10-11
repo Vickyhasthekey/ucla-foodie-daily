@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Today · UCLA Foodie Daily{% endblock %}
+{% block body %}
+<h1>Your matching dining hall today</h1>
+<div class="wish-row">
+  <p class="lede">{{ date_label }} · {{ wish }}</p>
+  {% if wish_save %}
+  {% if account %}
+  <form method="post" action="/favorite">
+    <input type="hidden" name="wish" value="{{ wish }}">
+    <button type="submit" class="save {% if wish_saved %}saved{% endif %}">{% if wish_saved %}Saved{% else %}Save{% endif %}</button>
+  </form>
+  {% else %}
+  <a class="save" href="/account?next={{ ('/today?wish=' ~ wish ~ '&save=' ~ wish_save) | urlencode }}">Save</a>
+  {% endif %}
+  {% endif %}
+</div>
+{% if also %}<p class="meta">Also matching what you always want: {{ also | join(", ") }}</p>{% endif %}
+
+{% if meals and meals|selectattr("halls")|list %}
+<form method="post" action="/plan">
+  <input type="hidden" name="wish" value="{{ wish }}">
+  {% for meal in meals %}
+  <h2>{{ meal.meal }}</h2>
+  {% if meal.halls %}
+  {% for hall in meal.halls %}
+  <label class="card meal-hall">
+    <input type="radio" name="{{ meal.meal }}" value="{{ hall.hall }}" {% if plan_choice.get(meal.meal) == hall.hall %}checked{% endif %}>
+    <span>
+      <h3>{{ hall.hall }}</h3>
+      <ul>
+        {% for dish in hall.dishes %}
+        <li>{{ dish.name }}</li>
+        {% endfor %}
+      </ul>
+    </span>
+  </label>
+  {% endfor %}
+  {% else %}
+  <p class="meta">No match for {{ meal.meal|lower }}.</p>
+  {% endif %}
+  {% endfor %}
+  {% if pick %}<p class="warn">Pick a dining hall.</p>{% endif %}
+  <button type="submit">Save plan</button>
+</form>
+{% if plan %}
+<h2>Your plan</h2>
+<ul class="plan">
+  {% for item in plan %}
+  <li>{{ item.meal }} — {{ item.hall }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% else %}
+<div class="card"><p>No dining hall has a match today.</p></div>
+{% endif %}
+
+<p class="note"><a href="/?wish={{ wish_query }}">Change it</a></p>
+{% endblock %}

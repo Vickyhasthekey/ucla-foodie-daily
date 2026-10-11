@@ -1,19 +1,28 @@
 # UCLA Foodie Daily
 
-A website for the dining-hall email that currently runs as three n8n workflows. Subscribers name the foods they want. Each morning at 7:00 Pacific, the job reads UCLA’s menu, matches those foods, and emails the halls that are serving them.
+The product lives on this website. Type what you feel like eating, and see your matching dining hall today.
 
-Open `index.html` in a browser to see the imported pages. Nothing on this site sends email yet.
+n8n is not part of this app. Old subscriber rows stay in n8n and are not imported.
 
-## What moved over
+## Run
 
-| n8n workflow | What it does | On this site |
-|---|---|---|
-| Foodie Signup (Form) | Email, wanted foods, optional preference | [signup.html](signup.html) |
-| Vicky_Foodie_Test | 7:00am menu match and MailerSend email | [src/email.js](src/email.js), [preview.html](preview.html) |
-| Foodie Unsubscribe | Remove that email and show a confirmation | [unsubscribe.html](unsubscribe.html) |
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --port 8765
+```
 
-The full step-by-step, including the assistant prompt and the rules the email follows, is in [docs/process.md](docs/process.md).
+Open http://127.0.0.1:8765
 
-## Not in this repo
+The database is `data/foodie.db` (not committed). Looking up a hall does not need an account. Saving a dish stores the food behind it (beef also means steak and the other similar words) and that requires signing in. The same email opens the same account. Copy `.env.example` to `.env` when you want the morning job to send mail. The app reads that file on startup. The first match downloads a small language model.
 
-Subscriber addresses stay in n8n’s data table. API keys for OpenRouter and MailerSend stay in n8n credentials. This repository has the process, not the secrets or the mailing list.
+## Morning email
+
+```bash
+python -m app.daily
+```
+
+That saves today’s UCLA menu and writes one email per active subscriber into the local outbox. Set `MAILERSEND_API_KEY` if those emails should actually send. See `.env.example`. A 7:00am Pacific cron can run the same command.
+
+Closed days produce no email. Matching compares the words they typed with today's dish names.

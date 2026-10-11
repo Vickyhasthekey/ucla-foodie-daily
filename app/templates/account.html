@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Account · UCLA Foodie Daily{% endblock %}
+{% block body %}
+{% if account %}
+<h1>{{ account.email }}</h1>
+{% if saved %}
+<h2>Always want</h2>
+{% for item in saved %}
+<div class="card dish">
+  <strong>{{ item.label }}</strong>
+  <p class="meta">{{ item.words }}</p>
+</div>
+{% endfor %}
+{% else %}
+<p class="lede">Saved foods show up here.</p>
+{% endif %}
+{% if plans %}
+<h2>Plans</h2>
+{% for day in plans %}
+<div class="card">
+  <strong>{{ day.label }}</strong>
+  <ul class="plan">
+    {% for item in day.meals %}
+    <li>{{ item.meal }} — {{ item.hall }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %}
+{% endif %}
+<form method="post" action="/logout">
+  <button type="submit" class="ghost">Log out</button>
+</form>
+{% else %}
+<h1>Create an account</h1>
+<p class="lede">Sign in to save a food you always want, or the halls you pick for the day. Looking up a hall does not need an account.</p>
+{% if error %}<p class="warn">{{ error }}</p>{% endif %}
+<form class="card" method="post" action="/account">
+  <input type="hidden" name="next" value="{{ next }}">
+  <label>Email
+    <input name="email" type="email" required placeholder="you@g.ucla.edu">
+  </label>
+  <button type="submit">Continue</button>
+</form>
+{% endif %}
+{% endblock %}

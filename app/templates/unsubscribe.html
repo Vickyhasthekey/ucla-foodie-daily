@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribe · UCLA Foodie Daily{% endblock %}
+{% block body %}
+<div class="card" style="text-align:center;padding:48px 24px">
+  {% if done and user %}
+  <h1>You've been unsubscribed</h1>
+  <p class="lede">{{ user.email }} will no longer receive UCLA Foodie Daily.</p>
+  <p>Changed your mind? <a href="/signup?email={{ user.email }}">Re-subscribe here</a></p>
+  {% elif missing %}
+  <h1>That unsubscribe link is not valid</h1>
+  <p><a href="/signup">Sign up</a></p>
+  {% else %}
+  <h1>Stop UCLA Foodie Daily?</h1>
+  <p class="lede">You'll stop receiving UCLA Foodie Daily.</p>
+  <form method="post" action="/unsubscribe">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button type="submit">Unsubscribe</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

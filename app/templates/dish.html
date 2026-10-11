@@ -1,0 +1,7 @@
+<div class="card dish">
+  <div class="card-top">
+    <strong>{{ item.name }}</strong>
+  </div>
+  <p class="meta">{{ item.places | join(", ") }}</p>
+  {% if item.goals %}<p class="meta">{{ item.goals | join(" · ") }}</p>{% endif %}
+</div>
