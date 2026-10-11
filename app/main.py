@@ -1,7 +1,9 @@
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, Form, Request
+from typing import Annotated
+
+from fastapi import FastAPI, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -145,9 +147,13 @@ def plan_return_path(wish, choices):
     }
     parts = []
     for meal, key in names.items():
-        hall = (choices.get(meal) or "").strip()
-        if hall:
-            parts.append(key + "=" + quote(hall))
+        halls = choices.get(meal) or []
+        if isinstance(halls, str):
+            halls = [halls]
+        for hall in halls:
+            hall = (hall or "").strip()
+            if hall:
+                parts.append(key + "=" + quote(hall))
     if parts:
         path += "&" + "&".join(parts)
     return path
@@ -161,7 +167,7 @@ def today(
     plan_breakfast: str = "",
     plan_lunch: str = "",
     plan_dinner: str = "",
-    plan_allday: str = "",
+    plan_allday: Annotated[list[str], Query()] = [],
     pick: str = "",
 ):
     wish = wish.strip()
@@ -189,6 +195,9 @@ def today(
     wish_preferences = preferences_from_wish(wish)
     wish_ids = [item["id"] for item in wish_preferences]
     plan = day_plan(user["id"], menu_date) if user else []
+    plan_choice = {}
+    for item in plan:
+        plan_choice.setdefault(item["meal"], []).append(item["hall"])
     return page(
         request,
         "today.html",
@@ -201,7 +210,7 @@ def today(
             "meals": meals,
             "also": also,
             "plan": plan,
-            "plan_choice": {item["meal"]: item["hall"] for item in plan},
+            "plan_choice": plan_choice,
             "pick": pick == "1",
         },
     )
@@ -214,12 +223,15 @@ def save_plan(
     Breakfast: str = Form(""),
     Lunch: str = Form(""),
     Dinner: str = Form(""),
-    all_day: str = Form("", alias="All day"),
+    all_day: Annotated[list[str], Form(alias="All day")] = [],
 ):
     wish = wish.strip()
     choices = {"Breakfast": Breakfast, "Lunch": Lunch, "Dinner": Dinner, "All day": all_day}
     user = viewer(request)
-    if not any(hall.strip() for hall in choices.values()):
+    picked = []
+    for value in choices.values():
+        picked.extend([value] if isinstance(value, str) else value)
+    if not any((hall or "").strip() for hall in picked):
         return RedirectResponse(today_path(wish) + "&pick=1", status_code=303)
     if not user:
         return RedirectResponse(

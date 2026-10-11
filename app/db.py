@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS day_plans (
   meal TEXT NOT NULL,
   hall TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  UNIQUE(user_id, menu_date, meal)
+  UNIQUE(user_id, menu_date, meal, hall)
 );
 
 CREATE TABLE IF NOT EXISTS favorites (
@@ -181,10 +181,47 @@ CREATE TABLE IF NOT EXISTS menu_days (
 """
 
 
+def _allow_several_places_per_meal(conn):
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'day_plans'"
+    ).fetchone()
+    if not row:
+        return
+    compact = "".join((row["sql"] or "").split())
+    if "UNIQUE(user_id,menu_date,meal,hall)" in compact:
+        return
+    conn.executescript(
+        """
+        CREATE TABLE day_plans_next (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          menu_date TEXT NOT NULL,
+          meal TEXT NOT NULL,
+          hall TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          UNIQUE(user_id, menu_date, meal, hall)
+        );
+        INSERT INTO day_plans_next (id, user_id, menu_date, meal, hall, created_at)
+          SELECT id, user_id, menu_date, meal, hall, created_at FROM day_plans;
+        DROP TABLE day_plans;
+        ALTER TABLE day_plans_next RENAME TO day_plans;
+        """
+    )
+
+
 def init_db():
     if _database_url():
         with connect() as conn:
             conn.executescript(POSTGRES_SCHEMA)
+            conn.execute(
+                "ALTER TABLE day_plans DROP CONSTRAINT IF EXISTS day_plans_user_id_menu_date_meal_key"
+            )
+            conn.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS day_plans_user_date_meal_hall
+                ON day_plans (user_id, menu_date, meal, hall)
+                """
+            )
         return
     with connect() as conn:
         conn.executescript(
@@ -252,7 +289,7 @@ def init_db():
               meal TEXT NOT NULL,
               hall TEXT NOT NULL,
               created_at TEXT NOT NULL,
-              UNIQUE(user_id, menu_date, meal)
+              UNIQUE(user_id, menu_date, meal, hall)
             );
 
             CREATE TABLE IF NOT EXISTS favorites (
@@ -273,6 +310,7 @@ def init_db():
         columns = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
         if "session_token" not in columns:
             conn.execute("ALTER TABLE users ADD COLUMN session_token TEXT")
+        _allow_several_places_per_meal(conn)
 
 
 def now_iso():

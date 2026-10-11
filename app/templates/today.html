@@ -25,7 +25,7 @@
   {% if meal.halls %}
   {% for hall in meal.halls %}
   <label class="card meal-hall">
-    <input type="radio" name="{{ meal.meal }}" value="{{ hall.hall }}" {% if plan_choice.get(meal.meal) == hall.hall %}checked{% endif %}>
+    <input type="{% if meal.meal == 'All day' %}checkbox{% else %}radio{% endif %}" name="{{ meal.meal }}" value="{{ hall.hall }}" {% if hall.hall in plan_choice.get(meal.meal, []) %}checked{% endif %}>
     <span>
       <h3>{{ hall.hall }}</h3>
       <ul>

@@ -145,6 +145,19 @@ def recommend(dishes, wish, score_fn=None):
 MEAL_ORDER = ("Breakfast", "Lunch", "Dinner", "All day")
 
 
+def _choice_list(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [value]
+    halls = []
+    for hall in value:
+        hall = (hall or "").strip()
+        if hall and hall not in halls:
+            halls.append(hall)
+    return halls
+
+
 def accepted_halls(meals, choices):
     offered = {
         meal["meal"]: {hall["hall"] for hall in meal["halls"]}
@@ -152,9 +165,15 @@ def accepted_halls(meals, choices):
     }
     kept = {}
     for meal in MEAL_ORDER:
-        hall = (choices.get(meal) or "").strip()
-        if hall and hall in offered.get(meal, set()):
-            kept[meal] = hall
+        halls = [
+            hall
+            for hall in _choice_list(choices.get(meal))
+            if hall in offered.get(meal, set())
+        ]
+        if meal != "All day":
+            halls = halls[:1]
+        if halls:
+            kept[meal] = halls
     return kept
 
 

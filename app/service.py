@@ -141,16 +141,20 @@ def save_day_plan(user_id, menu_date, choices):
             (user_id, menu_date),
         )
         for meal in MEAL_ORDER:
-            hall = (choices.get(meal) or "").strip()
-            if not hall:
-                continue
-            conn.execute(
-                """
-                INSERT INTO day_plans (user_id, menu_date, meal, hall, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (user_id, menu_date, meal, hall, stamp),
-            )
+            halls = choices.get(meal) or []
+            if isinstance(halls, str):
+                halls = [halls]
+            for hall in halls:
+                hall = (hall or "").strip()
+                if not hall:
+                    continue
+                conn.execute(
+                    """
+                    INSERT INTO day_plans (user_id, menu_date, meal, hall, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (user_id, menu_date, meal, hall, stamp),
+                )
 
 
 def day_plan(user_id, menu_date):
@@ -160,6 +164,7 @@ def day_plan(user_id, menu_date):
             """
             SELECT meal, hall FROM day_plans
             WHERE user_id = ? AND menu_date = ?
+            ORDER BY id
             """,
             (user_id, menu_date),
         ).fetchall()

@@ -134,7 +134,27 @@ class MenuTests(unittest.TestCase):
             meals,
             {"Breakfast": "De Neve Dining", "Lunch": "Epicuria at Covel", "Dinner": "Bruin Plate"},
         )
-        self.assertEqual(kept, {"Breakfast": "De Neve Dining"})
+        self.assertEqual(kept, {"Breakfast": ["De Neve Dining"]})
+
+    def test_all_day_can_keep_more_than_one_place(self):
+        meals = [
+            {"meal": "Breakfast", "halls": [{"hall": "De Neve Dining"}]},
+            {"meal": "All day", "halls": [{"hall": "The Study at Hedrick"}, {"hall": "Rendezvous"}]},
+        ]
+        kept = accepted_halls(
+            meals,
+            {
+                "Breakfast": ["De Neve Dining", "Bruin Plate"],
+                "All day": ["The Study at Hedrick", "Rendezvous", "The Drey"],
+            },
+        )
+        self.assertEqual(
+            kept,
+            {
+                "Breakfast": ["De Neve Dining"],
+                "All day": ["The Study at Hedrick", "Rendezvous"],
+            },
+        )
 
     def test_food_words_pick_the_matching_concept_without_a_model(self):
         texts = [concept["text"] for concept in CONCEPTS]
