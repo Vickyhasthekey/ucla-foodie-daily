@@ -142,7 +142,7 @@ def recommend(dishes, wish, score_fn=None):
     return {"matched": matched, "suggested": [], "service_today": bool(dishes)}
 
 
-MEAL_ORDER = ("Breakfast", "Lunch", "Dinner")
+MEAL_ORDER = ("Breakfast", "Lunch", "Dinner", "All day")
 
 
 def accepted_halls(meals, choices):

@@ -4,7 +4,7 @@ from pathlib import Path
 from app.db import DB_PATH
 from app.match import CONCEPTS, accepted_halls, group_by_meal, preference_from_name, preferences_from_wish, recommend
 from app.semantic import lexical_scores
-from app.menu import parse_menu_html
+from app.menu import boutique_locations, page_matches_date, parse_boutique_html, parse_menu_html
 
 FIXTURE = """
 <div id='breakfastmenu'>
@@ -68,11 +68,61 @@ class MenuTests(unittest.TestCase):
 
         matched = recommend(parse_menu_html(FIXTURE), "beef", score_fn=fake_scores)["matched"]
         meals = group_by_meal(matched)
-        self.assertEqual([meal["meal"] for meal in meals], ["Breakfast", "Lunch", "Dinner"])
+        self.assertEqual(
+            [meal["meal"] for meal in meals],
+            ["Breakfast", "Lunch", "Dinner", "All day"],
+        )
         breakfast_halls = {hall["hall"] for hall in meals[0]["halls"]}
         self.assertEqual(breakfast_halls, {"De Neve Dining", "Bruin Plate"})
         self.assertEqual(meals[1]["halls"], [])
         self.assertEqual(meals[2]["halls"], [])
+        self.assertEqual(meals[3]["halls"], [])
+
+    def test_boutique_page_reads_all_day_dishes(self):
+        html = """
+        <h2>Today's Hours</h2>
+        <div id='alldaymenu'>
+          <h2>All Day</h2>
+          <h2>Tartines</h2>
+          <div class='menu-item-title'><h3>Croque Monsieur</h3></div>
+          <a href='/menu-item/?recipe=1539'>See Meal Details</a>
+          <div class='menu-item-title'><h3>Belgian Waffle</h3></div>
+          <a href='/menu-item/?recipe=200'>See Meal Details</a>
+        </div>
+        """
+        dishes = parse_boutique_html(html, "The Study at Hedrick")
+        self.assertEqual(
+            [(dish["meal"], dish["hall"], dish["station"], dish["name"], dish["recipe_id"]) for dish in dishes],
+            [
+                ("All day", "The Study at Hedrick", "Tartines", "Croque Monsieur", "1539"),
+                ("All day", "The Study at Hedrick", "Tartines", "Belgian Waffle", "200"),
+            ],
+        )
+        self.assertTrue(page_matches_date("Today, October 11, 2026", "2026-10-11"))
+        self.assertFalse(page_matches_date("<option>October 11, 2026</option>", "2026-10-11"))
+
+    def test_boutique_list_skips_food_trucks_and_residential_halls(self):
+        html = """
+        <article class='ucla-tabpanel'>
+          <a href='/bruin-plate/'>Bruin Plate</a>
+        </article>
+        <article class='ucla-tabpanel' hidden>
+          <a href='/the-study-at-hedrick/'>The Study at Hedrick</a>
+          <a href='/meal-swipe-exchange/'>Food Trucks &amp; Restaurants</a>
+          <a href='/rendezvous/'>Rendezvous</a>
+        </article>
+        <article class='ucla-tabpanel' hidden>
+          <a href='/hours/'>Hours</a>
+        </article>
+        """
+        places = boutique_locations(html)
+        self.assertEqual(
+            places,
+            [
+                {"name": "The Study at Hedrick", "url": "https://dining.ucla.edu/the-study-at-hedrick/"},
+                {"name": "Rendezvous", "url": "https://dining.ucla.edu/rendezvous/"},
+            ],
+        )
 
     def test_plan_keeps_only_halls_offered_for_that_meal(self):
         meals = [

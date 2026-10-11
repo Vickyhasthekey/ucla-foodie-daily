@@ -141,6 +141,7 @@ def plan_return_path(wish, choices):
         "Breakfast": "plan_breakfast",
         "Lunch": "plan_lunch",
         "Dinner": "plan_dinner",
+        "All day": "plan_allday",
     }
     parts = []
     for meal, key in names.items():
@@ -160,6 +161,7 @@ def today(
     plan_breakfast: str = "",
     plan_lunch: str = "",
     plan_dinner: str = "",
+    plan_allday: str = "",
     pick: str = "",
 ):
     wish = wish.strip()
@@ -177,6 +179,7 @@ def today(
         "Breakfast": plan_breakfast,
         "Lunch": plan_lunch,
         "Dinner": plan_dinner,
+        "All day": plan_allday,
     }
     if user and any(pending_plan.values()):
         chosen = accepted_halls(meals, pending_plan)
@@ -211,9 +214,10 @@ def save_plan(
     Breakfast: str = Form(""),
     Lunch: str = Form(""),
     Dinner: str = Form(""),
+    all_day: str = Form("", alias="All day"),
 ):
     wish = wish.strip()
-    choices = {"Breakfast": Breakfast, "Lunch": Lunch, "Dinner": Dinner}
+    choices = {"Breakfast": Breakfast, "Lunch": Lunch, "Dinner": Dinner, "All day": all_day}
     user = viewer(request)
     if not any(hall.strip() for hall in choices.values()):
         return RedirectResponse(today_path(wish) + "&pick=1", status_code=303)

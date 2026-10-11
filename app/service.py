@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from app.db import connect, init_db, now_iso
 from app.mailer import render_email, send_mailersend
 from app.match import MEAL_ORDER, lookup_preference, recommend
-from app.menu import fetch_menu_html, parse_menu_html
+from app.menu import fetch_boutique_dishes, fetch_menu_html, parse_menu_html
 
 LA = ZoneInfo("America/Los_Angeles")
 
@@ -226,12 +226,14 @@ def store_menu(menu_date, dishes):
     init_db()
     with connect() as conn:
         conn.execute("DELETE FROM dishes WHERE menu_date = ?", (menu_date,))
-        conn.executemany(
-            """
-            INSERT INTO dishes (menu_date, meal, hall, station, name, recipe_id, tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            [
+        rows = []
+        seen = set()
+        for dish in dishes:
+            key = (dish["meal"], dish["hall"], dish["station"], dish["name"])
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(
                 (
                     menu_date,
                     dish["meal"],
@@ -241,8 +243,13 @@ def store_menu(menu_date, dishes):
                     dish["recipe_id"],
                     ",".join(dish["tags"]),
                 )
-                for dish in dishes
-            ],
+            )
+        conn.executemany(
+            """
+            INSERT INTO dishes (menu_date, meal, hall, station, name, recipe_id, tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            rows,
         )
 
 
@@ -272,14 +279,43 @@ def load_menu(menu_date):
     return dishes
 
 
+def menu_ready(menu_date):
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT boutique FROM menu_days WHERE menu_date = ?",
+            (menu_date,),
+        ).fetchone()
+    return bool(row and row["boutique"])
+
+
+def mark_menu(menu_date):
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO menu_days (menu_date, boutique) VALUES (?, 1)
+            ON CONFLICT(menu_date) DO UPDATE SET boutique = 1
+            """,
+            (menu_date,),
+        )
+
+
 def ensure_menu(menu_date):
     dishes = load_menu(menu_date)
-    if dishes:
+    if dishes and menu_ready(menu_date):
         return dishes
-    html = fetch_menu_html(menu_date)
-    dishes = parse_menu_html(html)
+    dishes = parse_menu_html(fetch_menu_html(menu_date))
+    boutique_ok = False
+    try:
+        dishes.extend(fetch_boutique_dishes(menu_date))
+        boutique_ok = True
+    except Exception:
+        boutique_ok = False
     if dishes:
         store_menu(menu_date, dishes)
+    if boutique_ok:
+        mark_menu(menu_date)
     return dishes
 
 

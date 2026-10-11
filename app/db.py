@@ -172,6 +172,12 @@ CREATE TABLE IF NOT EXISTS favorites (
   created_at TEXT NOT NULL,
   UNIQUE(user_id, dish_name)
 );
+
+CREATE TABLE IF NOT EXISTS menu_days (
+  id BIGSERIAL PRIMARY KEY,
+  menu_date TEXT NOT NULL UNIQUE,
+  boutique INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -255,6 +261,12 @@ def init_db():
               dish_name TEXT NOT NULL,
               created_at TEXT NOT NULL,
               UNIQUE(user_id, dish_name)
+            );
+
+            CREATE TABLE IF NOT EXISTS menu_days (
+              id INTEGER PRIMARY KEY,
+              menu_date TEXT NOT NULL UNIQUE,
+              boutique INTEGER NOT NULL DEFAULT 0
             );
             """
         )
