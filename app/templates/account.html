@@ -14,18 +14,16 @@
 {% else %}
 <p class="lede">Saved foods show up here.</p>
 {% endif %}
-{% if plans %}
-<h2>Plans</h2>
-{% for day in plans %}
+{% if plan %}
+<h2>Your plan</h2>
 <div class="card">
-  <strong>{{ day.label }}</strong>
+  <strong>{{ date_label }}</strong>
   <ul class="plan">
-    {% for item in day.meals %}
+    {% for item in plan %}
     <li>{{ item.meal }} — {{ item.hall }}</li>
     {% endfor %}
   </ul>
 </div>
-{% endfor %}
 {% endif %}
 <form method="post" action="/logout">
   <button type="submit" class="ghost">Log out</button>

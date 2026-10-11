@@ -15,7 +15,6 @@ from app.service import (
     ensure_menu,
     ensure_preference,
     get_user_by_session,
-    list_plans,
     list_preferences,
     preference_ids,
     init_db,
@@ -94,11 +93,18 @@ def home_submit(request: Request, wish: str = Form("")):
 def account_form(request: Request, next: str = "/"):
     user = viewer(request)
     saved = list_preferences(user["id"]) if user else []
-    plans = list_plans(user["id"]) if user else []
+    menu_date = la_today()
+    plan = day_plan(user["id"], menu_date) if user else []
     return page(
         request,
         "account.html",
-        {"next": safe_next(next), "saved": saved, "plans": plans, "error": ""},
+        {
+            "next": safe_next(next),
+            "saved": saved,
+            "plan": plan,
+            "date_label": la_label(menu_date),
+            "error": "",
+        },
     )
 
 
@@ -109,7 +115,7 @@ def account_submit(request: Request, email: str = Form(""), next: str = Form("/"
         return page(
             request,
             "account.html",
-            {"next": safe_next(next), "saved": [], "plans": [], "error": "Add an email."},
+            {"next": safe_next(next), "saved": [], "plan": [], "date_label": "", "error": "Add an email."},
         )
     user = open_account(email)
     response = RedirectResponse(safe_next(next), status_code=303)

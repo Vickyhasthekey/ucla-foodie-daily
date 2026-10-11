@@ -175,6 +175,10 @@ def day_plan(user_id, menu_date):
 
 
 def list_plans(user_id):
+    """Every saved day, including ones the account page does not show.
+
+    Older rows stay in day_plans so a later recommendation model can train on them.
+    """
     init_db()
     with connect() as conn:
         rows = conn.execute(
