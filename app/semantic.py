@@ -1,6 +1,12 @@
 import math
+import os
 import re
 from functools import lru_cache
+
+# Vercel can write only to /tmp. The model is downloaded there on first use.
+os.environ.setdefault("FASTEMBED_CACHE_PATH", "/tmp/fastembed-cache")
+os.environ.setdefault("HF_HOME", "/tmp/hf-home")
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", "/tmp/hf-home")
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
@@ -44,7 +50,8 @@ def score_query(query, documents):
         import fastembed  # noqa: F401
 
         vectors = embed([query, *documents])
-    except Exception:
+    except Exception as exc:
+        print(f"embedding fallback: {type(exc).__name__}: {exc}")
         return lexical_scores(query, documents)
     query_vector = vectors[0]
     return [cosine(query_vector, document) for document in vectors[1:]]
