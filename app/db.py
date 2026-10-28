@@ -209,7 +209,19 @@ def _allow_several_places_per_meal(conn):
     )
 
 
+_ready_for = None
+
+
 def init_db():
+    global _ready_for
+    key = _database_url() or str(_sqlite_path())
+    if _ready_for == key:
+        return
+    _init_db_once()
+    _ready_for = key
+
+
+def _init_db_once():
     if _database_url():
         with connect() as conn:
             conn.executescript(POSTGRES_SCHEMA)

@@ -262,17 +262,7 @@ def store_menu(menu_date, dishes):
         )
 
 
-def load_menu(menu_date):
-    init_db()
-    with connect() as conn:
-        rows = conn.execute(
-            """
-            SELECT meal, hall, station, name, recipe_id, tags
-            FROM dishes WHERE menu_date = ?
-            ORDER BY id
-            """,
-            (menu_date,),
-        ).fetchall()
+def _dishes_from_rows(rows):
     dishes = []
     for row in rows:
         dishes.append(
@@ -286,6 +276,20 @@ def load_menu(menu_date):
             }
         )
     return dishes
+
+
+def load_menu(menu_date):
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT meal, hall, station, name, recipe_id, tags
+            FROM dishes WHERE menu_date = ?
+            ORDER BY id
+            """,
+            (menu_date,),
+        ).fetchall()
+    return _dishes_from_rows(rows)
 
 
 def menu_ready(menu_date):
@@ -311,9 +315,22 @@ def mark_menu(menu_date):
 
 
 def ensure_menu(menu_date):
-    dishes = load_menu(menu_date)
-    if dishes and menu_ready(menu_date):
-        return dishes
+    init_db()
+    with connect() as conn:
+        ready = conn.execute(
+            "SELECT boutique FROM menu_days WHERE menu_date = ?",
+            (menu_date,),
+        ).fetchone()
+        rows = conn.execute(
+            """
+            SELECT meal, hall, station, name, recipe_id, tags
+            FROM dishes WHERE menu_date = ?
+            ORDER BY id
+            """,
+            (menu_date,),
+        ).fetchall()
+    if rows and ready and ready["boutique"]:
+        return _dishes_from_rows(rows)
     dishes = parse_menu_html(fetch_menu_html(menu_date))
     boutique_ok = False
     try:
