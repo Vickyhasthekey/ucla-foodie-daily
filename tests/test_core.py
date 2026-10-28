@@ -50,6 +50,24 @@ class MenuTests(unittest.TestCase):
         bulgogi = next(item for item in result["matched"] if item["name"] == "Beef Bulgogi")
         self.assertEqual(len(bulgogi["places"]), 2)
 
+    def test_beef_search_includes_a_steak_dish(self):
+        html = """
+        <div id='lunchmenu'>
+          <h3>Bruin Plate</h3>
+          <ul>
+            <li><a href='/menu-item/?recipe=1'>Beef Barley Soup</a></li>
+            <li><a href='/menu-item/?recipe=2'>Beef Pho</a></li>
+            <li><a href='/menu-item/?recipe=3'>Honey BBQ Beef Tips</a></li>
+            <li><a href='/menu-item/?recipe=4'>Midwest Pepper Steak</a></li>
+          </ul>
+        </div>
+        """
+        names = [
+            item["name"]
+            for item in recommend(parse_menu_html(html), "beef", score_fn=lexical_scores)["matched"]
+        ]
+        self.assertIn("Midwest Pepper Steak", names)
+
     def test_steak_saves_as_beef_and_similar_words(self):
         pref = preference_from_name("Grilled Honey Balsamic Flank Steak")
         self.assertEqual(pref["id"], "beef")

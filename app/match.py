@@ -123,20 +123,36 @@ def recommend(dishes, wish, score_fn=None):
             concept_hits = sum(_contains(item["name"], word) for word in words)
             typed_hits = sum(_contains(item["name"], word) for word in typed)
             if concept_hits or typed_hits:
-                ranked.append((typed_hits, concept_hits, -index, item))
+                ranked.append((concept_hits, typed_hits, -index, item))
         ranked.sort(reverse=True)
-        kept = 0
-        for _, _, _, item in ranked:
+        room = max(3, 8 // len(parts))
+        picked_items = []
+        used = set()
+
+        def take(item):
             key = item["name"].strip().lower()
-            if key in seen:
-                continue
-            seen.add(key)
+            if key in seen or key in used or len(picked_items) >= room or len(matched) + len(picked_items) >= 8:
+                return False
+            used.add(key)
+            picked_items.append(item)
+            return True
+
+        if words:
+            for word in words:
+                if len(picked_items) >= room:
+                    break
+                for _, _, _, item in ranked:
+                    if _contains(item["name"], word) and take(item):
+                        break
+        else:
+            for _, _, _, item in ranked:
+                if not take(item):
+                    break
+        for item in picked_items:
+            seen.add(item["name"].strip().lower())
             picked = dict(item)
             picked["goals"] = []
             matched.append(picked)
-            kept += 1
-            if kept >= 3 or len(matched) >= 8:
-                break
         if len(matched) >= 8:
             break
     return {"matched": matched, "suggested": [], "service_today": bool(dishes)}
