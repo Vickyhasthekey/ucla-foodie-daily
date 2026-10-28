@@ -108,8 +108,11 @@ class MenuTests(unittest.TestCase):
         </article>
         <article class='ucla-tabpanel' hidden>
           <a href='/the-study-at-hedrick/'>The Study at Hedrick</a>
+          <span class='open'>Open</span>
           <a href='/meal-swipe-exchange/'>Food Trucks &amp; Restaurants</a>
           <a href='/rendezvous/'>Rendezvous</a>
+          <a href='/bruin-bowl/'>Bruin Bowl</a>
+          <span class='closed'>Closed</span>
         </article>
         <article class='ucla-tabpanel' hidden>
           <a href='/hours/'>Hours</a>

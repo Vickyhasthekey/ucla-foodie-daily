@@ -160,6 +160,12 @@ class _BoutiqueListParser(HTMLParser):
             self._capture = True
             self._href = data.get("href", "")
             self._buf = []
+        if self._panel and tag == "span" and self.places:
+            classes = data.get("class", "").split()
+            if "closed" in classes:
+                self.places[-1]["closed"] = True
+            elif "open" in classes:
+                self.places[-1]["closed"] = False
 
     def handle_endtag(self, tag):
         if self._capture and tag == "a":
@@ -189,10 +195,10 @@ def boutique_locations(html):
     seen = set()
     places = []
     for place in parser.places:
-        if place["url"] in seen:
+        if place.get("closed") or place["url"] in seen:
             continue
         seen.add(place["url"])
-        places.append(place)
+        places.append({"name": place["name"], "url": place["url"]})
     return places
 
 

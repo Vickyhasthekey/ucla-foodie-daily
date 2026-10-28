@@ -323,7 +323,7 @@ def ensure_menu(menu_date):
         ).fetchone()
         rows = conn.execute(
             """
-            SELECT meal, hall, station, name, recipe_id, tags
+            SELECT meal, hall, '' AS station, name, '' AS recipe_id, '' AS tags
             FROM dishes WHERE menu_date = ?
             ORDER BY id
             """,
