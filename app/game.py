@@ -171,32 +171,57 @@ def build_deck(dishes, liked_concept_ids, never_ids, restrictions):
     if not pool:
         return []
     liked = set(liked_concept_ids or [])
-    close = [dish for dish in pool if liked and _matches_concepts(dish, liked)]
     popular_ids = set(POPULAR_CONCEPT_IDS)
-    popular = [dish for dish in pool if _matches_concepts(dish, popular_ids)]
-    fresh = [dish for dish in pool if not (liked and _matches_concepts(dish, liked))]
 
-    close_n = max(1, int(DECK_SIZE * CLOSE_SHARE)) if liked else 0
-    popular_n = max(1, int(DECK_SIZE * POPULAR_SHARE))
+    by_hall = {}
+    hall_order = []
+    for dish in pool:
+        hall = dish["hall"]
+        if hall not in by_hall:
+            by_hall[hall] = []
+            hall_order.append(hall)
+        by_hall[hall].append(dish)
+
+    def rank(dish):
+        score = 0
+        if liked and _matches_concepts(dish, liked):
+            score += 2
+        if _matches_concepts(dish, popular_ids):
+            score += 1
+        return -score
+
+    for hall in hall_order:
+        by_hall[hall].sort(key=rank)
+
+    # Spread across dining spots: at most a couple cards per hall when many halls exist.
+    if len(hall_order) >= 6:
+        max_per_hall = 2
+    elif len(hall_order) >= 3:
+        max_per_hall = 3
+    else:
+        max_per_hall = DECK_SIZE
+
     deck = []
-    used = set()
-
-    def take(source, count):
-        added = 0
-        for dish in source:
-            key = dish["name"].strip().lower()
-            if key in used:
+    used_names = set()
+    counts = {hall: 0 for hall in hall_order}
+    progressed = True
+    while len(deck) < DECK_SIZE and progressed:
+        progressed = False
+        for hall in hall_order:
+            if len(deck) >= DECK_SIZE:
+                break
+            if counts[hall] >= max_per_hall:
                 continue
-            used.add(key)
+            queue = by_hall[hall]
+            while queue and queue[0]["name"].strip().lower() in used_names:
+                queue.pop(0)
+            if not queue:
+                continue
+            dish = queue.pop(0)
+            used_names.add(dish["name"].strip().lower())
             deck.append(dish)
-            added += 1
-            if added >= count or len(deck) >= DECK_SIZE:
-                return
-
-    take(close, close_n)
-    take(popular, popular_n)
-    take(fresh, DECK_SIZE - len(deck))
-    take(pool, DECK_SIZE - len(deck))
+            counts[hall] += 1
+            progressed = True
     return deck[:DECK_SIZE]
 
 

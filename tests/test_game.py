@@ -39,6 +39,17 @@ class GameTests(unittest.TestCase):
         self.assertLessEqual(len(deck), 12)
         self.assertTrue(any("Beef" in dish["name"] or "Steak" in dish["name"] or "Brisket" in dish["name"] for dish in deck))
 
+    def test_deck_spreads_across_dining_spots(self):
+        wide = MENU + [
+            {"meal": "Lunch", "hall": "Epicuria at Covel", "name": "Lemon Herb Chicken", "tags": [], "station": "", "recipe_id": ""},
+            {"meal": "Dinner", "hall": "Feast at Rieber", "name": "Beef Pho Noodle Soup", "tags": [], "station": "", "recipe_id": ""},
+            {"meal": "All day", "hall": "Bruin Café", "name": "Ham & Swiss Sandwich", "tags": [], "station": "", "recipe_id": ""},
+        ]
+        deck = build_deck(wide, ["beef"], [], {"allergens": [], "rules": []})
+        halls = {dish["hall"] for dish in deck}
+        self.assertGreaterEqual(len(halls), 4)
+        self.assertLess(max(sum(1 for dish in deck if dish["hall"] == hall) for hall in halls), 4)
+
     def test_three_likes_ends_the_game(self):
         session = empty_session(["a|a|A", "b|b|B", "c|c|C", "d|d|D"])
         session, done = apply_swipe(session, "like")
