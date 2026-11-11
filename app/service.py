@@ -393,3 +393,159 @@ def run_daily(menu_date=None, send=True):
                 conn.execute("UPDATE outbox SET sent_at = ? WHERE id = ?", (now_iso(), outbox_id))
             sent += 1
     return {"date": menu_date, "dishes": len(dishes), "stored": stored, "sent": sent}
+
+
+def get_restrictions(user_id):
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT kind, value FROM user_restrictions WHERE user_id = ? ORDER BY id",
+            (user_id,),
+        ).fetchall()
+    allergens = []
+    rules = []
+    for row in rows:
+        if row["kind"] == "allergen":
+            allergens.append(row["value"])
+        elif row["kind"] == "rule":
+            rules.append(row["value"])
+    return {"allergens": allergens, "rules": rules}
+
+
+def save_restrictions(user_id, allergens, rules):
+    init_db()
+    stamp = now_iso()
+    with connect() as conn:
+        conn.execute("DELETE FROM user_restrictions WHERE user_id = ?", (user_id,))
+        for value in allergens or []:
+            value = (value or "").strip().lower()
+            if not value:
+                continue
+            conn.execute(
+                """
+                INSERT INTO user_restrictions (user_id, kind, value, created_at)
+                VALUES (?, 'allergen', ?, ?)
+                """,
+                (user_id, value, stamp),
+            )
+        for value in rules or []:
+            value = (value or "").strip().lower()
+            if not value:
+                continue
+            conn.execute(
+                """
+                INSERT INTO user_restrictions (user_id, kind, value, created_at)
+                VALUES (?, 'rule', ?, ?)
+                """,
+                (user_id, value, stamp),
+            )
+
+
+def list_never(user_id):
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT preference, label, words FROM never_preferences
+            WHERE user_id = ? ORDER BY id
+            """,
+            (user_id,),
+        ).fetchall()
+    return [
+        {"id": row["preference"], "label": row["label"], "words": row["words"]}
+        for row in rows
+    ]
+
+
+def never_ids(user_id):
+    return [row["id"] for row in list_never(user_id)]
+
+
+def ensure_never(user_id, preference_id):
+    spec = lookup_preference(preference_id)
+    if not spec:
+        return
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO never_preferences
+            (user_id, preference, label, words, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, spec["id"], spec["label"], ", ".join(spec["words"]), now_iso()),
+        )
+
+
+def remove_never(user_id, preference_id):
+    init_db()
+    with connect() as conn:
+        conn.execute(
+            "DELETE FROM never_preferences WHERE user_id = ? AND preference = ?",
+            (user_id, preference_id),
+        )
+
+
+def bump_concept_score(user_id, preference_id, signal):
+    if signal not in {"like", "pass", "never"}:
+        return
+    spec = lookup_preference(preference_id)
+    if not spec:
+        return
+    column = {"like": "like_n", "pass": "pass_n", "never": "never_n"}[signal]
+    init_db()
+    stamp = now_iso()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO concept_scores (user_id, preference, like_n, pass_n, never_n, updated_at)
+            VALUES (?, ?, 0, 0, 0, ?)
+            ON CONFLICT(user_id, preference) DO NOTHING
+            """,
+            (user_id, spec["id"], stamp),
+        )
+        conn.execute(
+            f"""
+            UPDATE concept_scores
+            SET {column} = {column} + 1, updated_at = ?
+            WHERE user_id = ? AND preference = ?
+            """,
+            (stamp, user_id, spec["id"]),
+        )
+
+
+def liked_concept_ids(user_id):
+    init_db()
+    ids = preference_ids(user_id)
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT preference, like_n, never_n FROM concept_scores
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        ).fetchall()
+    scored = []
+    for row in rows:
+        if (row["never_n"] or 0) > (row["like_n"] or 0):
+            continue
+        if (row["like_n"] or 0) > 0:
+            scored.append(row["preference"])
+    for preference_id in ids:
+        if preference_id not in scored:
+            scored.append(preference_id)
+    return scored
+
+
+def merge_guest_prefs(user_id, guest):
+    allergens = guest.get("allergens") or []
+    rules = guest.get("rules") or []
+    if allergens or rules:
+        current = get_restrictions(user_id)
+        save_restrictions(
+            user_id,
+            sorted(set(current["allergens"] + allergens)),
+            sorted(set(current["rules"] + rules)),
+        )
+    for preference_id in guest.get("never") or []:
+        ensure_never(user_id, preference_id)

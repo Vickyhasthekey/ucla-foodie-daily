@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Find your dining match! · UCLA Foodie Daily{% endblock %}
+{% block body %}
+<h1>Find your dining match!</h1>
+<p class="lede">First, what should we skip?</p>
+<form class="card" method="post" action="/match/restrict">
+  <h2>Allergies</h2>
+  <div class="chip-grid">
+    {% for value, label in allergen_options %}
+    <label class="chip">
+      <input type="checkbox" name="allergen" value="{{ value }}" {% if value in restrictions.allergens %}checked{% endif %}>
+      <span>{{ label }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  <h2>Food rules</h2>
+  <div class="chip-grid">
+    {% for value, label in food_rules %}
+    <label class="chip">
+      <input type="checkbox" name="rule" value="{{ value }}" {% if value in restrictions.rules %}checked{% endif %}>
+      <span>{{ label }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  <button type="submit">Start swiping</button>
+</form>
+<p class="note"><a href="/">Back to search</a></p>
+{% endblock %}

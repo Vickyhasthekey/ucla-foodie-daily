@@ -25,12 +25,39 @@
   </ul>
 </div>
 {% endif %}
+{% if restrictions.allergens or restrictions.rules %}
+<h2>Dietary rules</h2>
+<div class="card">
+  <ul class="plan">
+    {% for item in restrictions.allergens %}<li>Allergy — {{ item }}</li>{% endfor %}
+    {% for item in restrictions.rules %}<li>Rule — {{ item.replace('_', ' ') }}</li>{% endfor %}
+  </ul>
+  <p class="meta"><a href="/match?edit=1">Change for the swipe game</a></p>
+</div>
+{% endif %}
+<h2>Not for me ever</h2>
+{% if never_list %}
+{% for item in never_list %}
+<div class="card dish">
+  <div class="card-top">
+    <strong>{{ item.label }}</strong>
+    <form method="post" action="/account/never/remove">
+      <input type="hidden" name="preference" value="{{ item.id }}">
+      <button type="submit" class="ghost save">Remove</button>
+    </form>
+  </div>
+  <p class="meta">{{ item.words }}</p>
+</div>
+{% endfor %}
+{% else %}
+<p class="lede">Foods you mark “Not for me ever” show up here so you can change your mind.</p>
+{% endif %}
 <form method="post" action="/logout">
   <button type="submit" class="ghost">Log out</button>
 </form>
 {% else %}
 <h1>Create an account</h1>
-<p class="lede">Sign in to save a food you always want, or the halls you pick for the day. Looking up a hall does not need an account.</p>
+<p class="lede">{% if save_prefs %}To save your preference, please create an account.{% else %}Sign in to save a food you always want, Not for me ever, or the halls you pick for the day. Looking up a hall does not need an account.{% endif %}</p>
 {% if error %}<p class="warn">{{ error }}</p>{% endif %}
 <form class="card" method="post" action="/account">
   <input type="hidden" name="next" value="{{ next }}">

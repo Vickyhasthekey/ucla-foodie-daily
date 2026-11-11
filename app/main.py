@@ -9,25 +9,52 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.env import load_env
-from app.match import accepted_halls, group_by_meal, preferences_from_wish, recommend
+from app.game import (
+    ALLERGEN_OPTIONS,
+    DECK_SIZE,
+    FOOD_RULES,
+    LIKE_TARGET,
+    apply_swipe,
+    build_deck,
+    card_payload,
+    decode_guest_prefs,
+    decode_session,
+    dishes_from_keys,
+    empty_session,
+    encode_guest_prefs,
+    encode_session,
+    match_result,
+)
+from app.match import accepted_halls, group_by_meal, preference_from_name, preferences_from_wish, recommend
 from app.service import (
+    bump_concept_score,
     day_plan,
     ensure_menu,
+    ensure_never,
     ensure_preference,
+    get_restrictions,
     get_user_by_session,
+    liked_concept_ids,
+    list_never,
     list_preferences,
+    merge_guest_prefs,
+    never_ids,
     preference_ids,
     init_db,
     la_label,
     la_today,
     open_account,
+    remove_never,
     save_day_plan,
+    save_restrictions,
     save_wish,
     toggle_preference,
     unsubscribe,
 )
 
 COOKIE = "foodie_session"
+GUEST_COOKIE = "foodie_guest"
+SWIPE_COOKIE = "foodie_swipe"
 
 load_env()
 ROOT = Path(__file__).resolve().parent
@@ -53,6 +80,72 @@ def page(request, name, context, status_code=200):
     context = dict(context)
     context["account"] = viewer(request)
     return templates.TemplateResponse(request, name, context, status_code=status_code)
+
+
+def cookie_kwargs(request):
+    return {
+        "httponly": True,
+        "samesite": "lax",
+        "secure": request.url.scheme == "https",
+        "max_age": 60 * 60 * 24 * 400,
+    }
+
+
+def guest_prefs(request):
+    return decode_guest_prefs(request.cookies.get(GUEST_COOKIE, ""))
+
+
+def set_guest_cookie(response, request, restrictions, never, ready=False):
+    response.set_cookie(
+        GUEST_COOKIE,
+        encode_guest_prefs(restrictions, never, ready=ready),
+        **cookie_kwargs(request),
+    )
+
+
+def load_profile(request):
+    user = viewer(request)
+    guest = guest_prefs(request)
+    if user:
+        restrictions = get_restrictions(user["id"])
+        restrictions["ready"] = bool(
+            guest.get("ready")
+            or restrictions["allergens"]
+            or restrictions["rules"]
+            or list_never(user["id"])
+        )
+        never = never_ids(user["id"])
+        liked = liked_concept_ids(user["id"])
+        return user, restrictions, never, liked
+    return (
+        None,
+        {
+            "allergens": guest["allergens"],
+            "rules": guest["rules"],
+            "ready": guest.get("ready"),
+        },
+        guest["never"],
+        [],
+    )
+
+
+def swipe_session(request):
+    return decode_session(request.cookies.get(SWIPE_COOKIE, ""))
+
+
+def set_swipe_cookie(response, request, session):
+    response.set_cookie(SWIPE_COOKIE, encode_session(session), **cookie_kwargs(request))
+
+
+def clear_swipe_cookie(response):
+    response.delete_cookie(SWIPE_COOKIE)
+
+
+def start_deck(request):
+    _, restrictions, never, liked = load_profile(request)
+    dishes = ensure_menu(la_today())
+    deck = build_deck(dishes, liked, never, restrictions)
+    return empty_session([card_payload(dish)["key"] for dish in deck])
 
 
 def home_page(request, wish, error=""):
@@ -90,9 +183,11 @@ def home_submit(request: Request, wish: str = Form("")):
 
 
 @app.get("/account", response_class=HTMLResponse)
-def account_form(request: Request, next: str = "/"):
+def account_form(request: Request, next: str = "/", save_prefs: str = ""):
     user = viewer(request)
     saved = list_preferences(user["id"]) if user else []
+    never_list = list_never(user["id"]) if user else []
+    restrictions = get_restrictions(user["id"]) if user else {"allergens": [], "rules": []}
     menu_date = la_today()
     plan = day_plan(user["id"], menu_date) if user else []
     return page(
@@ -101,8 +196,11 @@ def account_form(request: Request, next: str = "/"):
         {
             "next": safe_next(next),
             "saved": saved,
+            "never_list": never_list,
+            "restrictions": restrictions,
             "plan": plan,
             "date_label": la_label(menu_date),
+            "save_prefs": save_prefs == "1",
             "error": "",
         },
     )
@@ -115,19 +213,31 @@ def account_submit(request: Request, email: str = Form(""), next: str = Form("/"
         return page(
             request,
             "account.html",
-            {"next": safe_next(next), "saved": [], "plan": [], "date_label": "", "error": "Add an email."},
+            {
+                "next": safe_next(next),
+                "saved": [],
+                "never_list": [],
+                "restrictions": {"allergens": [], "rules": []},
+                "plan": [],
+                "date_label": "",
+                "save_prefs": True,
+                "error": "Add an email.",
+            },
         )
     user = open_account(email)
+    merge_guest_prefs(user["id"], guest_prefs(request))
     response = RedirectResponse(safe_next(next), status_code=303)
-    response.set_cookie(
-        COOKIE,
-        user["session_token"],
-        httponly=True,
-        samesite="lax",
-        secure=request.url.scheme == "https",
-        max_age=60 * 60 * 24 * 400,
-    )
+    response.set_cookie(COOKIE, user["session_token"], **cookie_kwargs(request))
     return response
+
+
+@app.post("/account/never/remove")
+def account_never_remove(request: Request, preference: str = Form("")):
+    user = viewer(request)
+    if not user:
+        return RedirectResponse("/account?save_prefs=1", status_code=303)
+    remove_never(user["id"], preference.strip())
+    return RedirectResponse("/account", status_code=303)
 
 
 @app.post("/logout")
@@ -302,6 +412,203 @@ def unsubscribe_submit(request: Request, token: str = Form("")):
         "unsubscribe.html",
         {"token": token, "done": True, "user": user, "missing": user is None},
     )
+
+
+@app.get("/match", response_class=HTMLResponse)
+def match_entry(request: Request, edit: str = ""):
+    user, restrictions, never, _ = load_profile(request)
+    if edit == "1" or not restrictions.get("ready"):
+        return page(
+            request,
+            "match_restrict.html",
+            {
+                "allergen_options": ALLERGEN_OPTIONS,
+                "food_rules": FOOD_RULES,
+                "restrictions": restrictions,
+            },
+        )
+    response = RedirectResponse("/match/play", status_code=303)
+    session = start_deck(request)
+    set_swipe_cookie(response, request, session)
+    return response
+
+
+@app.post("/match/restrict")
+async def match_restrict(request: Request):
+    form = await request.form()
+    allergens = [str(value) for value in form.getlist("allergen")]
+    rules = [str(value) for value in form.getlist("rule")]
+    user = viewer(request)
+    guest = guest_prefs(request)
+    restrictions = {"allergens": allergens, "rules": rules, "ready": True}
+    if user:
+        save_restrictions(user["id"], allergens, rules)
+        never = never_ids(user["id"])
+    else:
+        never = guest.get("never") or []
+    response = RedirectResponse("/match/play", status_code=303)
+    set_guest_cookie(response, request, restrictions, never, ready=True)
+    session = start_deck(request)
+    # Rebuild deck with the restrictions just chosen (start_deck read cookies before set).
+    dishes = ensure_menu(la_today())
+    liked = liked_concept_ids(user["id"]) if user else []
+    deck = build_deck(dishes, liked, never, restrictions)
+    set_swipe_cookie(response, request, empty_session([card_payload(dish)["key"] for dish in deck]))
+    return response
+
+
+@app.get("/match/play", response_class=HTMLResponse)
+def match_play(request: Request):
+    user, restrictions, never, liked = load_profile(request)
+    if not restrictions.get("ready"):
+        return RedirectResponse("/match", status_code=303)
+    session = swipe_session(request)
+    if not session.get("deck"):
+        session = start_deck(request)
+    likes = session.get("likes") or []
+    if len(likes) >= LIKE_TARGET or int(session.get("index") or 0) >= len(session.get("deck") or []):
+        return RedirectResponse("/match/result", status_code=303)
+    dishes = ensure_menu(la_today())
+    index = int(session.get("index") or 0)
+    deck = session.get("deck") or []
+    card = None
+    if index < len(deck):
+        current = dishes_from_keys([deck[index]], dishes)[0]
+        card = card_payload(current)
+    response = page(
+        request,
+        "match_play.html",
+        {
+            "card": card,
+            "like_target": LIKE_TARGET,
+            "liked_count": len(likes),
+            "remaining": max(0, len(deck) - index),
+            "can_undo": bool(session.get("undo")),
+            "show_save_prompt": (not user) and bool(session.get("nevers") or likes),
+        },
+    )
+    set_swipe_cookie(response, request, session)
+    return response
+
+
+@app.post("/match/play")
+def match_play_submit(request: Request, action: str = Form("pass")):
+    user, restrictions, never, _ = load_profile(request)
+    session = swipe_session(request)
+    if not session.get("deck"):
+        session = start_deck(request)
+    dishes = ensure_menu(la_today())
+    before_index = int(session.get("index") or 0)
+    deck = session.get("deck") or []
+    current_key = deck[before_index] if before_index < len(deck) else ""
+    session, done = apply_swipe(session, action)
+    if user and current_key and action in {"like", "pass", "never"}:
+        dish = dishes_from_keys([current_key], dishes)[0]
+        pref = preference_from_name(dish["name"])
+        if pref:
+            bump_concept_score(user["id"], pref["id"], "never" if action == "never" else action)
+            if action == "never":
+                ensure_never(user["id"], pref["id"])
+    if not user and action == "never" and current_key:
+        dish = dishes_from_keys([current_key], dishes)[0]
+        pref = preference_from_name(dish["name"])
+        guest = guest_prefs(request)
+        never_list = list(guest.get("never") or [])
+        if pref and pref["id"] not in never_list:
+            never_list.append(pref["id"])
+        response = RedirectResponse("/match/result" if done else "/match/play", status_code=303)
+        set_guest_cookie(
+            response,
+            request,
+            {"allergens": guest.get("allergens") or [], "rules": guest.get("rules") or []},
+            never_list,
+            ready=True,
+        )
+        set_swipe_cookie(response, request, session)
+        return response
+    response = RedirectResponse("/match/result" if done else "/match/play", status_code=303)
+    set_swipe_cookie(response, request, session)
+    return response
+
+
+@app.get("/match/result", response_class=HTMLResponse)
+def match_result_page(request: Request, pick: str = ""):
+    user, restrictions, never, _ = load_profile(request)
+    session = swipe_session(request)
+    if not session.get("deck"):
+        return RedirectResponse("/match", status_code=303)
+    menu_date = la_today()
+    dishes = ensure_menu(menu_date)
+    liked = dishes_from_keys(session.get("likes") or [], dishes)
+    meals, suggestions = match_result(
+        liked,
+        dishes,
+        restrictions,
+        never,
+        session.get("passes") or [],
+        session.get("nevers") or [],
+    )
+    plan = day_plan(user["id"], menu_date) if user else []
+    plan_choice = {}
+    for item in plan:
+        plan_choice.setdefault(item["meal"], []).append(item["hall"])
+    for meal, hall in suggestions.items():
+        plan_choice.setdefault(meal, [hall])
+        if meal != "All day":
+            plan_choice[meal] = [hall]
+        elif hall not in plan_choice[meal]:
+            plan_choice[meal] = [hall]
+    return page(
+        request,
+        "match_result.html",
+        {
+            "date_label": la_label(menu_date),
+            "meals": meals,
+            "plan_choice": plan_choice,
+            "pick": pick == "1",
+            "show_save_prompt": not user,
+        },
+    )
+
+
+@app.post("/match/plan")
+def match_save_plan(
+    request: Request,
+    Breakfast: str = Form(""),
+    Lunch: str = Form(""),
+    Dinner: str = Form(""),
+    all_day: Annotated[list[str], Form(alias="All day")] = [],
+):
+    choices = {"Breakfast": Breakfast, "Lunch": Lunch, "Dinner": Dinner, "All day": all_day}
+    user = viewer(request)
+    picked = []
+    for value in choices.values():
+        picked.extend([value] if isinstance(value, str) else value)
+    if not any((hall or "").strip() for hall in picked):
+        return RedirectResponse("/match/result?pick=1", status_code=303)
+    if not user:
+        return RedirectResponse(
+            "/account?next=" + quote("/match/result") + "&save_prefs=1",
+            status_code=303,
+        )
+    session = swipe_session(request)
+    dishes = ensure_menu(la_today())
+    liked = dishes_from_keys(session.get("likes") or [], dishes)
+    _, restrictions, never, _ = load_profile(request)
+    meals, _ = match_result(
+        liked,
+        dishes,
+        restrictions,
+        never,
+        session.get("passes") or [],
+        session.get("nevers") or [],
+    )
+    chosen = accepted_halls(meals, choices)
+    if chosen:
+        save_day_plan(user["id"], la_today(), chosen)
+    response = RedirectResponse("/", status_code=303)
+    clear_swipe_cookie(response)
+    return response
 
 
 @app.get("/health")

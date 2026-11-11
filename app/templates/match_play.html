@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Find your dining match! · UCLA Foodie Daily{% endblock %}
+{% block body %}
+<h1>Find your dining match!</h1>
+<p class="lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck</p>
+{% if card %}
+<div class="card match-card">
+  <p class="meta">{{ card.meal }} · {{ card.hall }}</p>
+  <h2 class="match-dish">{{ card.name }}</h2>
+  {% if card.vibes or card.allergens %}
+  <div class="chip-row">
+    {% for chip in card.vibes %}<span class="pill">{{ chip }}</span>{% endfor %}
+    {% for chip in card.allergens %}<span class="pill calm">{{ chip }}</span>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+<form class="match-actions" method="post" action="/match/play">
+  <button type="submit" name="action" value="never" class="ghost">Not for me ever</button>
+  <button type="submit" name="action" value="pass" class="ghost">Pass</button>
+  <button type="submit" name="action" value="like">Like</button>
+</form>
+<form method="post" action="/match/play">
+  <button type="submit" name="action" value="undo" class="ghost" {% if not can_undo %}disabled{% endif %}>Undo last swipe</button>
+</form>
+{% else %}
+<div class="card"><p>No dishes left to show with your filters. Try relaxing restrictions.</p></div>
+<p class="note"><a href="/match?edit=1">Edit restrictions</a></p>
+{% endif %}
+<p class="note"><a href="/">Back to search</a></p>
+{% if show_save_prompt %}
+<dialog class="save-prompt" open>
+  <form method="dialog" class="card">
+    <strong>Save your preferences</strong>
+    <p class="meta">To keep Not for me ever and your dietary rules across devices, create an account.</p>
+    <div class="prompt-actions">
+      <a class="button" href="/account?next={{ '/match'|urlencode }}&save_prefs=1">Create an account</a>
+      <button value="cancel" class="ghost">Keep playing</button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}

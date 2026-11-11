@@ -202,7 +202,89 @@ button.saved { color: var(--green); }
 
 .choice .meta { display: block; }
 
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+label.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+  font-weight: 500;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+label.chip input { width: auto; margin: 0; }
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.match-dish {
+  margin: 8px 0 0;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.match-actions button { margin-top: 0; }
+
+a.ghost-link {
+  display: inline-block;
+  margin-top: 14px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.save-prompt {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.save-prompt::backdrop {
+  background: rgba(28, 22, 18, 0.35);
+}
+
+.prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.prompt-actions .button,
+.prompt-actions button {
+  margin-top: 0;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 @media (max-width: 640px) {
   h1 { font-size: 34px; }
   .wrap { width: min(720px, calc(100% - 28px)); }
+  .match-dish { font-size: 24px; }
 }

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Your dining match · UCLA Foodie Daily{% endblock %}
+{% block body %}
+<h1>Find your dining match!</h1>
+<p class="lede">{{ date_label }} · based on what you liked today</p>
+<form method="post" action="/match/plan">
+  {% for meal in meals %}
+  <h2>{{ meal.meal }}</h2>
+  {% if meal.halls %}
+  {% for hall in meal.halls %}
+  <label class="card meal-hall">
+    <input type="{% if meal.meal == 'All day' %}checkbox{% else %}radio{% endif %}" name="{{ meal.meal }}" value="{{ hall.hall }}" {% if hall.hall in plan_choice.get(meal.meal, []) %}checked{% endif %}>
+    <span>
+      <h3>{{ hall.hall }}</h3>
+      <ul>
+        {% for dish in hall.dishes %}
+        <li>{{ dish.name }}</li>
+        {% endfor %}
+      </ul>
+    </span>
+  </label>
+  {% endfor %}
+  {% else %}
+  <p class="meta">No match for {{ meal.meal|lower }}.</p>
+  {% endif %}
+  {% endfor %}
+  {% if pick %}<p class="warn">Pick a dining hall.</p>{% endif %}
+  <button type="submit">Save plan</button>
+</form>
+<p class="note"><a href="/match?edit=1">Play again</a> · <a href="/">Search instead</a></p>
+{% if show_save_prompt %}
+<dialog class="save-prompt" open>
+  <form method="dialog" class="card">
+    <strong>Save your preferences</strong>
+    <p class="meta">To save your preference, please create an account.</p>
+    <div class="prompt-actions">
+      <a class="button" href="/account?next={{ '/match/result'|urlencode }}&save_prefs=1">Create an account</a>
+      <button value="cancel" class="ghost">Not now</button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+<script>
+document.querySelectorAll("label.meal-hall input[type=radio]").forEach((radio) => {
+  radio.dataset.on = radio.checked ? "1" : "0";
+  radio.addEventListener("click", () => {
+    if (radio.dataset.on === "1") {
+      radio.checked = false;
+      radio.dataset.on = "0";
+      return;
+    }
+    document.querySelectorAll("label.meal-hall input[type=radio]").forEach((other) => {
+      if (other.name === radio.name) other.dataset.on = other === radio ? "1" : "0";
+    });
+  });
+});
+</script>
+{% endblock %}

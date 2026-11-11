@@ -178,6 +178,36 @@ CREATE TABLE IF NOT EXISTS menu_days (
   menu_date TEXT NOT NULL UNIQUE,
   boutique INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS user_restrictions (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id),
+  kind TEXT NOT NULL,
+  value TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_id, kind, value)
+);
+
+CREATE TABLE IF NOT EXISTS never_preferences (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id),
+  preference TEXT NOT NULL,
+  label TEXT NOT NULL,
+  words TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_id, preference)
+);
+
+CREATE TABLE IF NOT EXISTS concept_scores (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id),
+  preference TEXT NOT NULL,
+  like_n INTEGER NOT NULL DEFAULT 0,
+  pass_n INTEGER NOT NULL DEFAULT 0,
+  never_n INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL,
+  UNIQUE(user_id, preference)
+);
 """
 
 
@@ -316,6 +346,36 @@ def _init_db_once():
               id INTEGER PRIMARY KEY,
               menu_date TEXT NOT NULL UNIQUE,
               boutique INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS user_restrictions (
+              id INTEGER PRIMARY KEY,
+              user_id INTEGER NOT NULL REFERENCES users(id),
+              kind TEXT NOT NULL,
+              value TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              UNIQUE(user_id, kind, value)
+            );
+
+            CREATE TABLE IF NOT EXISTS never_preferences (
+              id INTEGER PRIMARY KEY,
+              user_id INTEGER NOT NULL REFERENCES users(id),
+              preference TEXT NOT NULL,
+              label TEXT NOT NULL,
+              words TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              UNIQUE(user_id, preference)
+            );
+
+            CREATE TABLE IF NOT EXISTS concept_scores (
+              id INTEGER PRIMARY KEY,
+              user_id INTEGER NOT NULL REFERENCES users(id),
+              preference TEXT NOT NULL,
+              like_n INTEGER NOT NULL DEFAULT 0,
+              pass_n INTEGER NOT NULL DEFAULT 0,
+              never_n INTEGER NOT NULL DEFAULT 0,
+              updated_at TEXT NOT NULL,
+              UNIQUE(user_id, preference)
             );
             """
         )
