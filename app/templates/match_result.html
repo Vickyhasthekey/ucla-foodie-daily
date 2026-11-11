@@ -32,9 +32,10 @@
 <dialog class="save-prompt" open>
   <form method="dialog" class="card">
     <strong>Save your preferences</strong>
-    <p class="meta">To save your preference, please create an account.</p>
+    <p class="meta">To save your preference, create an account or sign in.</p>
     <div class="prompt-actions">
       <a class="button" href="/account?next={{ '/match/result'|urlencode }}&save_prefs=1">Create an account</a>
+      <a class="ghost" href="/account?next={{ '/match/result'|urlencode }}&save_prefs=1&mode=signin">Sign in</a>
       <button value="cancel" class="ghost">Not now</button>
     </div>
   </form>

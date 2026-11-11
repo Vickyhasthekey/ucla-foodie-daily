@@ -186,7 +186,7 @@ def home_submit(request: Request, wish: str = Form("")):
 
 
 @app.get("/account", response_class=HTMLResponse)
-def account_form(request: Request, next: str = "/", save_prefs: str = ""):
+def account_form(request: Request, next: str = "/", save_prefs: str = "", mode: str = ""):
     user = viewer(request)
     saved = list_preferences(user["id"]) if user else []
     never_list = list_never(user["id"]) if user else []
@@ -204,6 +204,7 @@ def account_form(request: Request, next: str = "/", save_prefs: str = ""):
             "plan": plan,
             "date_label": la_label(menu_date),
             "save_prefs": save_prefs == "1",
+            "mode": "signin" if mode == "signin" else "create",
             "error": "",
         },
     )
@@ -224,6 +225,7 @@ def account_submit(request: Request, email: str = Form(""), next: str = Form("/"
                 "plan": [],
                 "date_label": "",
                 "save_prefs": True,
+                "mode": "create",
                 "error": "Add an email.",
             },
         )

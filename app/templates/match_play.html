@@ -68,9 +68,10 @@
 <dialog class="save-prompt" open>
   <form method="dialog" class="card">
     <strong>Save your preferences</strong>
-    <p class="meta">To keep Not for me ever and your dietary rules across devices, create an account.</p>
+    <p class="meta">To keep Not for me ever and your dietary rules across devices, create an account or sign in.</p>
     <div class="prompt-actions">
       <a class="button" href="/account?next={{ '/match'|urlencode }}&save_prefs=1">Create an account</a>
+      <a class="ghost" href="/account?next={{ '/match'|urlencode }}&save_prefs=1&mode=signin">Sign in</a>
       <button value="cancel" class="ghost">Keep playing</button>
     </div>
   </form>

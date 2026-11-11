@@ -411,8 +411,21 @@ a.ghost-link {
 }
 
 .prompt-actions .button,
+.prompt-actions a.ghost,
 .prompt-actions button {
   margin-top: 0;
+}
+
+.prompt-actions a.ghost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  background: transparent;
 }
 
 button:disabled {
