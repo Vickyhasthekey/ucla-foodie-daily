@@ -47,6 +47,8 @@ VEGETARIAN_BLOCK = ["chicken", "turkey", "beef", "steak", "pork", "bacon", "ham"
 
 POPULAR_CONCEPT_IDS = ["beef", "chicken", "fish", "dessert", "noodles", "vegetables"]
 
+MEAL_OPTIONS = [(meal, meal) for meal in MEAL_ORDER]
+
 
 def dish_key(dish):
     return f"{dish['meal']}|{dish['hall']}|{dish['name']}"
@@ -137,8 +139,11 @@ def filter_dishes(dishes, restrictions, never_ids):
     allergens = set(restrictions.get("allergens") or [])
     rules = set(restrictions.get("rules") or [])
     never = set(never_ids or [])
+    meals = set(restrictions.get("meals") or [])
     kept = []
     for dish in dishes:
+        if meals and dish.get("meal") not in meals:
+            continue
         if _blocked_by_rule(dish["name"], rules):
             continue
         if _blocked_by_allergen(dish, allergens):
@@ -241,6 +246,7 @@ def encode_guest_prefs(restrictions, never_ids, ready=False):
         {
             "allergens": list(restrictions.get("allergens") or []),
             "rules": list(restrictions.get("rules") or []),
+            "meals": [meal for meal in (restrictions.get("meals") or []) if meal in MEAL_ORDER],
             "never": list(never_ids or []),
             "ready": bool(ready or restrictions.get("ready")),
         },
@@ -256,6 +262,7 @@ def decode_guest_prefs(raw):
     return {
         "allergens": [item for item in data.get("allergens") or [] if isinstance(item, str)],
         "rules": [item for item in data.get("rules") or [] if isinstance(item, str)],
+        "meals": [item for item in data.get("meals") or [] if item in MEAL_ORDER],
         "never": [item for item in data.get("never") or [] if isinstance(item, str)],
         "ready": bool(data.get("ready")),
     }

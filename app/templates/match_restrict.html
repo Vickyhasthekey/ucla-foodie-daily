@@ -22,6 +22,16 @@
     </label>
     {% endfor %}
   </div>
+  <h2>Meals <span class="meta">(optional)</span></h2>
+  <p class="meta">Leave empty to swipe all meals.</p>
+  <div class="chip-grid">
+    {% for value, label in meal_options %}
+    <label class="chip">
+      <input type="checkbox" name="meal" value="{{ value }}" {% if value in restrictions.meals %}checked{% endif %}>
+      <span>{{ label }}</span>
+    </label>
+    {% endfor %}
+  </div>
   <button type="submit">Start swiping</button>
 </form>
 <p class="note"><a href="/">Back to search</a></p>

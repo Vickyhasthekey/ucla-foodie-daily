@@ -2,7 +2,7 @@
 {% block title %}Find your dining match! · UCLA Foodie Daily{% endblock %}
 {% block body %}
 <h1>Find your dining match!</h1>
-<p class="lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck</p>
+<p class="lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck{% if meal_filter %} · {{ meal_filter | join(", ") }}{% endif %}</p>
 {% if card %}
 <section class="hinge-stage" aria-label="Dish card">
   <div class="hinge-stack" id="hinge-stack" data-name="{{ card.name }}">

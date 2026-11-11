@@ -39,6 +39,16 @@ class GameTests(unittest.TestCase):
         self.assertLessEqual(len(deck), 12)
         self.assertTrue(any("Beef" in dish["name"] or "Steak" in dish["name"] or "Brisket" in dish["name"] for dish in deck))
 
+    def test_optional_meal_filter_limits_the_deck(self):
+        deck = build_deck(
+            MENU,
+            [],
+            [],
+            {"allergens": [], "rules": [], "meals": ["All day"]},
+        )
+        self.assertTrue(deck)
+        self.assertTrue(all(dish["meal"] == "All day" for dish in deck))
+
     def test_deck_spreads_across_dining_spots(self):
         wide = MENU + [
             {"meal": "Lunch", "hall": "Epicuria at Covel", "name": "Lemon Herb Chicken", "tags": [], "station": "", "recipe_id": ""},

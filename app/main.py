@@ -14,6 +14,7 @@ from app.game import (
     DECK_SIZE,
     FOOD_RULES,
     LIKE_TARGET,
+    MEAL_OPTIONS,
     apply_swipe,
     build_deck,
     card_payload,
@@ -108,6 +109,7 @@ def load_profile(request):
     guest = guest_prefs(request)
     if user:
         restrictions = get_restrictions(user["id"])
+        restrictions["meals"] = guest.get("meals") or []
         restrictions["ready"] = bool(
             guest.get("ready")
             or restrictions["allergens"]
@@ -122,6 +124,7 @@ def load_profile(request):
         {
             "allergens": guest["allergens"],
             "rules": guest["rules"],
+            "meals": guest.get("meals") or [],
             "ready": guest.get("ready"),
         },
         guest["never"],
@@ -424,7 +427,12 @@ def match_entry(request: Request, edit: str = ""):
             {
                 "allergen_options": ALLERGEN_OPTIONS,
                 "food_rules": FOOD_RULES,
-                "restrictions": restrictions,
+                "meal_options": MEAL_OPTIONS,
+                "restrictions": {
+                    "allergens": restrictions.get("allergens") or [],
+                    "rules": restrictions.get("rules") or [],
+                    "meals": restrictions.get("meals") or [],
+                },
             },
         )
     response = RedirectResponse("/match/play", status_code=303)
@@ -438,9 +446,10 @@ async def match_restrict(request: Request):
     form = await request.form()
     allergens = [str(value) for value in form.getlist("allergen")]
     rules = [str(value) for value in form.getlist("rule")]
+    meals = [str(value) for value in form.getlist("meal")]
     user = viewer(request)
     guest = guest_prefs(request)
-    restrictions = {"allergens": allergens, "rules": rules, "ready": True}
+    restrictions = {"allergens": allergens, "rules": rules, "meals": meals, "ready": True}
     if user:
         save_restrictions(user["id"], allergens, rules)
         never = never_ids(user["id"])
@@ -448,8 +457,7 @@ async def match_restrict(request: Request):
         never = guest.get("never") or []
     response = RedirectResponse("/match/play", status_code=303)
     set_guest_cookie(response, request, restrictions, never, ready=True)
-    session = start_deck(request)
-    # Rebuild deck with the restrictions just chosen (start_deck read cookies before set).
+    # Rebuild deck with the restrictions just chosen (cookies are not readable until the next request).
     dishes = ensure_menu(la_today())
     liked = liked_concept_ids(user["id"]) if user else []
     deck = build_deck(dishes, liked, never, restrictions)
@@ -484,6 +492,7 @@ def match_play(request: Request):
             "liked_count": len(likes),
             "remaining": max(0, len(deck) - index),
             "can_undo": bool(session.get("undo")),
+            "meal_filter": restrictions.get("meals") or [],
             "show_save_prompt": (not user) and bool(session.get("nevers") or likes),
         },
     )
@@ -520,7 +529,11 @@ def match_play_submit(request: Request, action: str = Form("pass")):
         set_guest_cookie(
             response,
             request,
-            {"allergens": guest.get("allergens") or [], "rules": guest.get("rules") or []},
+            {
+                "allergens": guest.get("allergens") or [],
+                "rules": guest.get("rules") or [],
+                "meals": guest.get("meals") or [],
+            },
             never_list,
             ready=True,
         )
