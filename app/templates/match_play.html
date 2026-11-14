@@ -1,8 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Find your dining match! · UCLA Foodie Daily{% endblock %}
 {% block body %}
+<div class="match-emoji-field">
+  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Ramen bounce"><span class="match-emoji-face">🍜</span></button>
+  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Burger bounce"><span class="match-emoji-face">🍔</span></button>
+  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Taco bounce"><span class="match-emoji-face">🌮</span></button>
+  <button type="button" class="match-emoji" data-depth="1" aria-label="Pizza bounce"><span class="match-emoji-face">🍕</span></button>
+  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Ice cream bounce"><span class="match-emoji-face">🍦</span></button>
+</div>
 <h1>Find your dining match!</h1>
-<p class="lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck{% if meal_filter %} · {{ meal_filter | join(", ") }}{% endif %}</p>
+<p class="lede" id="play-lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck{% if meal_filter %} · {{ meal_filter | join(", ") }}{% endif %}</p>
 {% if card %}
 <section class="hinge-stage" aria-label="Dish card">
   <div class="hinge-stack" id="hinge-stack" data-name="{{ card.name }}">
@@ -39,18 +46,18 @@
   </div>
 
   <div class="hinge-dock">
-    <form method="post" action="/match/play" class="hinge-dock-form">
+    <form method="post" action="/match/play" class="hinge-dock-form" data-swipe-action="pass">
       <button type="submit" name="action" value="pass" class="hinge-btn hinge-btn-pass" aria-label="Skip">✕</button>
     </form>
     <form method="post" action="/match/play" class="hinge-dock-form">
       <button type="submit" name="action" value="undo" class="hinge-btn hinge-btn-undo" aria-label="Undo" {% if not can_undo %}disabled{% endif %}>↺</button>
     </form>
-    <form method="post" action="/match/play" class="hinge-dock-form" id="like-form">
+    <form method="post" action="/match/play" class="hinge-dock-form" data-swipe-action="like" id="like-form">
       <button type="submit" name="action" value="like" class="hinge-btn hinge-btn-like" aria-label="Like">♥</button>
     </form>
   </div>
 
-  <form method="post" action="/match/play" class="hinge-never-form">
+  <form method="post" action="/match/play" class="hinge-never-form" data-swipe-action="never">
     <button type="submit" name="action" value="never" class="ghost">Not for me ever</button>
   </form>
   <p class="meta hinge-hint">Drag the card · left skips · right likes · or tap ✕ / ♥</p>
@@ -59,11 +66,13 @@
 <form method="post" action="/match/play" id="swipe-form" hidden>
   <input type="hidden" name="action" id="swipe-action" value="pass">
 </form>
+<script src="/static/match-play.js?v=1" defer></script>
 {% else %}
 <div class="card"><p>No dishes left to show with your filters. Try relaxing restrictions.</p></div>
 <p class="note"><a href="/match?edit=1">Edit restrictions</a></p>
 {% endif %}
 <p class="note"><a href="/">Back to search</a></p>
+<script src="/static/match-emojis.js?v=5" defer></script>
 {% if show_save_prompt %}
 <dialog class="save-prompt" open>
   <form method="dialog" class="card">
@@ -76,85 +85,5 @@
     </div>
   </form>
 </dialog>
-{% endif %}
-{% if card %}
-<script>
-(() => {
-  const card = document.getElementById("hinge-card");
-  const form = document.getElementById("swipe-form");
-  const actionInput = document.getElementById("swipe-action");
-  if (!card || !form) return;
-
-  const threshold = 110;
-  let startX = 0;
-  let startY = 0;
-  let dx = 0;
-  let dy = 0;
-  let dragging = false;
-  let locked = false;
-
-  function setTransform(x, y, rot) {
-    card.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
-    card.style.setProperty("--like-opacity", Math.min(1, Math.max(0, x / threshold)));
-    card.style.setProperty("--pass-opacity", Math.min(1, Math.max(0, -x / threshold)));
-  }
-
-  function reset() {
-    card.classList.remove("is-flying");
-    card.style.transition = "transform 180ms ease";
-    setTransform(0, 0, 0);
-    card.style.setProperty("--like-opacity", 0);
-    card.style.setProperty("--pass-opacity", 0);
-  }
-
-  function commit(action) {
-    if (locked) return;
-    locked = true;
-    const flyX = action === "like" ? window.innerWidth : -window.innerWidth;
-    card.classList.add("is-flying");
-    card.style.transition = "transform 280ms ease";
-    setTransform(flyX, dy * 0.2, action === "like" ? 18 : -18);
-    actionInput.value = action;
-    window.setTimeout(() => form.submit(), 220);
-  }
-
-  function onDown(clientX, clientY) {
-    if (locked) return;
-    dragging = true;
-    startX = clientX;
-    startY = clientY;
-    card.style.transition = "none";
-  }
-
-  function onMove(clientX, clientY) {
-    if (!dragging || locked) return;
-    dx = clientX - startX;
-    dy = clientY - startY;
-    setTransform(dx, dy * 0.15, dx / 18);
-  }
-
-  function onUp() {
-    if (!dragging || locked) return;
-    dragging = false;
-    if (dx > threshold) commit("like");
-    else if (dx < -threshold) commit("pass");
-    else reset();
-  }
-
-  card.addEventListener("pointerdown", (event) => {
-    if (event.button != null && event.button !== 0) return;
-    if (event.target.closest("button")) return;
-    card.setPointerCapture(event.pointerId);
-    onDown(event.clientX, event.clientY);
-  });
-  card.addEventListener("pointermove", (event) => onMove(event.clientX, event.clientY));
-  card.addEventListener("pointerup", onUp);
-  card.addEventListener("pointercancel", onUp);
-
-  document.querySelectorAll("[data-action='like']").forEach((button) => {
-    button.addEventListener("click", () => commit("like"));
-  });
-})();
-</script>
 {% endif %}
 {% endblock %}

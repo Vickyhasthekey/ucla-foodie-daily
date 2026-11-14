@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Your dining match · UCLA Foodie Daily{% endblock %}
 {% block body %}
+<div class="match-emoji-field">
+  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Ramen bounce"><span class="match-emoji-face">🍜</span></button>
+  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Burger bounce"><span class="match-emoji-face">🍔</span></button>
+  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Taco bounce"><span class="match-emoji-face">🌮</span></button>
+  <button type="button" class="match-emoji" data-depth="1" aria-label="Pizza bounce"><span class="match-emoji-face">🍕</span></button>
+  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Ice cream bounce"><span class="match-emoji-face">🍦</span></button>
+</div>
 <h1>Find your dining match!</h1>
 <p class="lede">{{ date_label }} · based on what you liked today</p>
-<form method="post" action="/match/plan">
+<form method="post" action="/match/plan" class="match-result-form">
   {% for meal in meals %}
   <h2>{{ meal.meal }}</h2>
   {% if meal.halls %}
@@ -28,6 +35,7 @@
   <button type="submit">Save plan</button>
 </form>
 <p class="note"><a href="/match?edit=1">Play again</a> · <a href="/">Search instead</a></p>
+<script src="/static/match-emojis.js?v=5" defer></script>
 {% if show_save_prompt %}
 <dialog class="save-prompt" open>
   <form method="dialog" class="card">

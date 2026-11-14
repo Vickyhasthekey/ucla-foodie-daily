@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Today · UCLA Foodie Daily{% endblock %}
 {% block body %}
+<div class="match-emoji-field">
+  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Strawberry bounce"><span class="match-emoji-face">🍓</span></button>
+  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Watermelon bounce"><span class="match-emoji-face">🍉</span></button>
+  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Grapes bounce"><span class="match-emoji-face">🍇</span></button>
+  <button type="button" class="match-emoji" data-depth="1" aria-label="Cake bounce"><span class="match-emoji-face">🍰</span></button>
+  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Donut bounce"><span class="match-emoji-face">🍩</span></button>
+  <button type="button" class="match-emoji" data-depth="0.85" aria-label="Cherry bounce"><span class="match-emoji-face">🍒</span></button>
+</div>
 <h1>Your matching dining hall today</h1>
 <div class="wish-row">
   <p class="lede">{{ date_label }} · {{ wish }}</p>
@@ -56,6 +64,7 @@
 {% endif %}
 
 <p class="note"><a href="/?wish={{ wish_query }}">Change it</a></p>
+<script src="/static/match-emojis.js?v=5" defer></script>
 <script>
 document.querySelectorAll("label.meal-hall input[type=radio]").forEach((radio) => {
   radio.dataset.on = radio.checked ? "1" : "0";

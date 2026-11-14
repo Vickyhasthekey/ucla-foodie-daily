@@ -4,7 +4,7 @@ from urllib.parse import quote
 from typing import Annotated
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -507,8 +507,36 @@ def match_play(request: Request):
     return response
 
 
+def wants_json(request: Request) -> bool:
+    accept = (request.headers.get("accept") or "").lower()
+    return "application/json" in accept or request.headers.get("x-foodie-ajax") == "1"
+
+
+def match_play_payload(request, session, restrictions, user):
+    likes = session.get("likes") or []
+    deck = session.get("deck") or []
+    index = int(session.get("index") or 0)
+    done = len(likes) >= LIKE_TARGET or index >= len(deck)
+    card = None
+    if not done and index < len(deck):
+        dishes = ensure_menu(la_today())
+        current = dishes_from_keys([deck[index]], dishes)[0]
+        card = card_payload(current)
+    return {
+        "done": done,
+        "redirect": "/match/result" if done else None,
+        "card": card,
+        "liked_count": len(likes),
+        "remaining": max(0, len(deck) - index),
+        "can_undo": bool(session.get("undo")),
+        "like_target": LIKE_TARGET,
+        "meal_filter": restrictions.get("meals") or [],
+        "show_save_prompt": (not user) and bool(session.get("nevers") or likes),
+    }
+
+
 @app.post("/match/play")
-def match_play_submit(request: Request, action: str = Form("pass")):
+async def match_play_submit(request: Request, action: str = Form("pass")):
     user, restrictions, never, _ = load_profile(request)
     session = swipe_session(request)
     if not session.get("deck"):
@@ -518,6 +546,7 @@ def match_play_submit(request: Request, action: str = Form("pass")):
     deck = session.get("deck") or []
     current_key = deck[before_index] if before_index < len(deck) else ""
     session, done = apply_swipe(session, action)
+    guest_never = None
     if user and current_key and action in {"like", "pass", "never"}:
         dish = dishes_from_keys([current_key], dishes)[0]
         pref = preference_from_name(dish["name"])
@@ -532,6 +561,29 @@ def match_play_submit(request: Request, action: str = Form("pass")):
         never_list = list(guest.get("never") or [])
         if pref and pref["id"] not in never_list:
             never_list.append(pref["id"])
+        guest_never = (guest, never_list)
+
+    if wants_json(request):
+        payload = match_play_payload(request, session, restrictions, user)
+        response = JSONResponse(payload)
+        if guest_never is not None:
+            guest, never_list = guest_never
+            set_guest_cookie(
+                response,
+                request,
+                {
+                    "allergens": guest.get("allergens") or [],
+                    "rules": guest.get("rules") or [],
+                    "meals": guest.get("meals") or [],
+                },
+                never_list,
+                ready=True,
+            )
+        set_swipe_cookie(response, request, session)
+        return response
+
+    if guest_never is not None:
+        guest, never_list = guest_never
         response = RedirectResponse("/match/result" if done else "/match/play", status_code=303)
         set_guest_cookie(
             response,

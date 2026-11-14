@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 {% block body %}
-<h1>Find your matching dining hall today.</h1>
-{% if error %}<p class="warn">{{ error }}</p>{% endif %}
-<form class="card" method="post" action="/">
-  <input name="wish" required placeholder="beef, salmon, tiramisu" aria-label="Foods" value="{{ wish }}">
-  <button type="submit">See today's hall</button>
-</form>
-<p class="note"><a class="button ghost-link" href="/match">Not sure? Swipe dishes</a></p>
+<section class="home-hero">
+  <div class="home-copy">
+    <p class="home-brand">UCLA Foodie Daily</p>
+    <h1>Find your matching dining hall today.</h1>
+    <p class="lede home-lede">Type a craving — or tilt your phone and let the little snacks wiggle along.</p>
+    <button type="button" class="tilt-opt-in" id="tilt-snacks" hidden>Allow tilt</button>
+
+    {% if error %}<p class="warn">{{ error }}</p>{% endif %}
+    <form class="card home-search" method="post" action="/">
+      <input name="wish" required placeholder="beef, salmon, tiramisu" aria-label="Foods" value="{{ wish }}">
+      <button type="submit">See today's hall</button>
+    </form>
+    <p class="note"><a class="button ghost-link" href="/match">Not sure? Swipe dishes</a></p>
+  </div>
+
+  <div class="snack-field" id="snack-field" aria-hidden="true">
+    <span class="snack snack-a" data-depth="0.55">🥑</span>
+    <span class="snack snack-b" data-depth="0.9">🍣</span>
+    <span class="snack snack-c" data-depth="0.7">🍰</span>
+    <span class="snack snack-d" data-depth="1">🍙</span>
+    <span class="snack snack-e" data-depth="0.65">🍓</span>
+  </div>
+</section>
+
 {% if plan %}
 <div class="card">
   <strong>Your plan</strong>
@@ -18,4 +35,5 @@
   </ul>
 </div>
 {% endif %}
+<script src="/static/home-snacks.js" defer></script>
 {% endblock %}
