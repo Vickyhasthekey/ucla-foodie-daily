@@ -59,17 +59,34 @@ def save_wish(email, wish):
     return get_user(email)
 
 
-def open_account(email):
-    user = upsert_user(email)
-    if user["session_token"]:
-        return user
-    token = secrets.token_urlsafe(24)
-    with connect() as conn:
+def _open_account_on(conn, email):
+    email = email.strip().lower()
+    stamp = now_iso()
+    existing = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    if existing:
+        token = existing["session_token"] or secrets.token_urlsafe(24)
         conn.execute(
-            "UPDATE users SET session_token = ?, updated_at = ? WHERE id = ?",
-            (token, now_iso(), user["id"]),
+            "UPDATE users SET active = 1, session_token = ?, updated_at = ? WHERE id = ?",
+            (token, stamp, existing["id"]),
         )
-    return get_user(email)
+        return conn.execute("SELECT * FROM users WHERE id = ?", (existing["id"],)).fetchone()
+    token = secrets.token_urlsafe(24)
+    unsub = secrets.token_urlsafe(24)
+    conn.execute(
+        """
+        INSERT INTO users
+        (email, foods, pref, unsubscribe_token, active, created_at, updated_at, session_token)
+        VALUES (?, '', '', ?, 1, ?, ?, ?)
+        """,
+        (email, unsub, stamp, stamp, token),
+    )
+    return conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+
+def open_account(email):
+    init_db()
+    with connect() as conn:
+        return _open_account_on(conn, email)
 
 
 def get_user_by_session(token):
@@ -537,15 +554,67 @@ def liked_concept_ids(user_id):
     return scored
 
 
-def merge_guest_prefs(user_id, guest):
+def _merge_guest_prefs_on(conn, user_id, guest):
+    guest = guest or {}
     allergens = guest.get("allergens") or []
     rules = guest.get("rules") or []
+    stamp = now_iso()
     if allergens or rules:
-        current = get_restrictions(user_id)
-        save_restrictions(
-            user_id,
-            sorted(set(current["allergens"] + allergens)),
-            sorted(set(current["rules"] + rules)),
-        )
+        rows = conn.execute(
+            "SELECT kind, value FROM user_restrictions WHERE user_id = ?",
+            (user_id,),
+        ).fetchall()
+        current_allergens = [row["value"] for row in rows if row["kind"] == "allergen"]
+        current_rules = [row["value"] for row in rows if row["kind"] == "rule"]
+        merged_allergens = sorted(set(current_allergens + allergens))
+        merged_rules = sorted(set(current_rules + rules))
+        conn.execute("DELETE FROM user_restrictions WHERE user_id = ?", (user_id,))
+        for value in merged_allergens:
+            value = (value or "").strip().lower()
+            if not value:
+                continue
+            conn.execute(
+                """
+                INSERT INTO user_restrictions (user_id, kind, value, created_at)
+                VALUES (?, 'allergen', ?, ?)
+                """,
+                (user_id, value, stamp),
+            )
+        for value in merged_rules:
+            value = (value or "").strip().lower()
+            if not value:
+                continue
+            conn.execute(
+                """
+                INSERT INTO user_restrictions (user_id, kind, value, created_at)
+                VALUES (?, 'rule', ?, ?)
+                """,
+                (user_id, value, stamp),
+            )
     for preference_id in guest.get("never") or []:
-        ensure_never(user_id, preference_id)
+        spec = lookup_preference(preference_id)
+        if not spec:
+            continue
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO never_preferences
+            (user_id, preference, label, words, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, spec["id"], spec["label"], ", ".join(spec["words"]), stamp),
+        )
+
+
+def merge_guest_prefs(user_id, guest):
+    init_db()
+    with connect() as conn:
+        _merge_guest_prefs_on(conn, user_id, guest)
+
+
+def complete_sign_in(email, guest=None):
+    """Open/create the account and merge guest prefs in one DB connection."""
+    init_db()
+    with connect() as conn:
+        user = _open_account_on(conn, email)
+        _merge_guest_prefs_on(conn, user["id"], guest)
+        return user

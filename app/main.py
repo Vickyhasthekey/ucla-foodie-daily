@@ -38,13 +38,11 @@ from app.service import (
     liked_concept_ids,
     list_never,
     list_preferences,
-    merge_guest_prefs,
     never_ids,
     preference_ids,
-    init_db,
+    complete_sign_in,
     la_label,
     la_today,
-    open_account,
     remove_never,
     save_day_plan,
     save_restrictions,
@@ -62,9 +60,6 @@ ROOT = Path(__file__).resolve().parent
 app = FastAPI(title="UCLA Foodie Daily")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 templates = Jinja2Templates(directory=ROOT / "templates")
-
-
-init_db()
 
 
 def viewer(request):
@@ -166,6 +161,17 @@ def home_page(request, wish, error=""):
     )
 
 
+@app.get("/health")
+def health():
+    """Cheap keepalive for free cron pings — wakes Neon without running schema work."""
+    from app.db import connect, _database_url
+
+    if _database_url():
+        with connect() as conn:
+            conn.execute("SELECT 1")
+    return {"ok": True}
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, wish: str = ""):
     user = viewer(request)
@@ -229,8 +235,7 @@ def account_submit(request: Request, email: str = Form(""), next: str = Form("/"
                 "error": "Add an email.",
             },
         )
-    user = open_account(email)
-    merge_guest_prefs(user["id"], guest_prefs(request))
+    user = complete_sign_in(email, guest_prefs(request))
     response = RedirectResponse(safe_next(next), status_code=303)
     response.set_cookie(COOKIE, user["session_token"], **cookie_kwargs(request))
     return response

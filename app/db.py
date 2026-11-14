@@ -3,8 +3,28 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-DATA_DIR = Path(os.environ.get("FOODIE_DATA", Path(__file__).resolve().parent.parent / "data"))
-DB_PATH = DATA_DIR / "foodie.db"
+def _data_dir():
+    return Path(os.environ.get("FOODIE_DATA", Path(__file__).resolve().parent.parent / "data"))
+
+
+class _LazyDbPath:
+    """Resolves against the current FOODIE_DATA so tests can isolate storage."""
+
+    def _path(self):
+        return _data_dir() / "foodie.db"
+
+    def __getattr__(self, name):
+        return getattr(self._path(), name)
+
+    def __str__(self):
+        return str(self._path())
+
+    def __fspath__(self):
+        return str(self._path())
+
+
+DB_PATH = _LazyDbPath()
+DATA_DIR = _data_dir()  # default; _sqlite_path reads FOODIE_DATA live
 
 
 def _database_url():
@@ -73,7 +93,7 @@ class _PgConnection:
 
 
 def _sqlite_path():
-    directory = DATA_DIR
+    directory = _data_dir()
     try:
         directory.mkdir(parents=True, exist_ok=True)
         probe = directory / ".write-test"
@@ -91,7 +111,10 @@ def connect():
         from psycopg import connect as pg_connect
         from psycopg.rows import dict_row
 
-        return _PgConnection(pg_connect(url, row_factory=dict_row))
+        # connect_timeout fails fast on a sleeping Neon instead of hanging the request.
+        return _PgConnection(
+            pg_connect(url, row_factory=dict_row, connect_timeout=10)
+        )
     conn = sqlite3.connect(_sqlite_path())
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -251,19 +274,44 @@ def init_db():
     _ready_for = key
 
 
+def _postgres_schema_present(conn):
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'concept_scores'
+        """
+    ).fetchone()
+    return bool(row)
+
+
+def _postgres_meal_hall_index_present(conn):
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'public' AND indexname = 'day_plans_user_date_meal_hall'
+        """
+    ).fetchone()
+    return bool(row)
+
+
 def _init_db_once():
     if _database_url():
         with connect() as conn:
-            conn.executescript(POSTGRES_SCHEMA)
-            conn.execute(
-                "ALTER TABLE day_plans DROP CONSTRAINT IF EXISTS day_plans_user_id_menu_date_meal_key"
-            )
-            conn.execute(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS day_plans_user_date_meal_hall
-                ON day_plans (user_id, menu_date, meal, hall)
-                """
-            )
+            # Skip replaying the full CREATE script on every serverless cold start.
+            if not _postgres_schema_present(conn):
+                conn.executescript(POSTGRES_SCHEMA)
+            if not _postgres_meal_hall_index_present(conn):
+                conn.execute(
+                    "ALTER TABLE day_plans DROP CONSTRAINT IF EXISTS day_plans_user_id_menu_date_meal_key"
+                )
+                conn.execute(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS day_plans_user_date_meal_hall
+                    ON day_plans (user_id, menu_date, meal, hall)
+                    """
+                )
         return
     with connect() as conn:
         conn.executescript(
