@@ -5,6 +5,11 @@
   const emojis = Array.from(field.querySelectorAll(".match-emoji"));
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const max = 5;
+  const FOODS = [
+    "🍜", "🍔", "🌮", "🍕", "🍓", "🍩", "🥑", "🍣", "🍰", "🍦",
+    "🍇", "🍉", "🍒", "🥐", "🥗", "🍤", "🍱", "🍪", "🫐", "🥭",
+    "🥝", "🍎", "🥨", "🥞", "🧋", "🥟", "🍙",
+  ];
   let targetX = 0;
   let targetY = 0;
   let curX = 0;
@@ -12,6 +17,14 @@
 
   function rand(min, max) {
     return min + Math.random() * (max - min);
+  }
+
+  function nextFood(current) {
+    let pick = current;
+    for (let i = 0; i < 8 && pick === current; i += 1) {
+      pick = FOODS[Math.floor(Math.random() * FOODS.length)];
+    }
+    return pick;
   }
 
   const storageKey = "foodie_match_emoji_layout";
@@ -121,6 +134,7 @@
     const face = el.querySelector(".match-emoji-face") || el;
     el.addEventListener("click", (event) => {
       event.preventDefault();
+      face.textContent = nextFood(face.textContent.trim());
       pop(face);
     });
     el.addEventListener("pointerdown", () => el.classList.add("is-pressed"));

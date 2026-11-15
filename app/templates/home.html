@@ -2,9 +2,9 @@
 {% block body %}
 <section class="home-hero">
   <div class="home-copy">
-    <p class="home-brand">UCLA Foodie Daily</p>
-    <h1>Find your matching dining hall today.</h1>
-    <p class="lede home-lede">Type a craving — or tilt your phone and let the little snacks wiggle along.</p>
+    <p class="home-brand">UCLA <span>Foodie Daily</span></p>
+    <h1>Find your <em>matching</em> dining hall today.</h1>
+    <p class="lede home-lede">Type a craving to see which dining hall fits today.</p>
     <button type="button" class="tilt-opt-in" id="tilt-snacks" hidden>Allow tilt</button>
 
     {% if error %}<p class="warn">{{ error }}</p>{% endif %}
@@ -15,12 +15,12 @@
     <p class="note"><a class="button ghost-link" href="/match">Not sure? Swipe dishes</a></p>
   </div>
 
-  <div class="snack-field" id="snack-field" aria-hidden="true">
-    <span class="snack snack-a" data-depth="0.55">🥑</span>
-    <span class="snack snack-b" data-depth="0.9">🍣</span>
-    <span class="snack snack-c" data-depth="0.7">🍰</span>
-    <span class="snack snack-d" data-depth="1">🍙</span>
-    <span class="snack snack-e" data-depth="0.65">🍓</span>
+  <div class="snack-field" id="snack-field">
+    <button type="button" class="snack snack-a" data-depth="0.55" aria-label="Food emoji">🥑</button>
+    <button type="button" class="snack snack-b" data-depth="0.9" aria-label="Food emoji">🍣</button>
+    <button type="button" class="snack snack-c" data-depth="0.7" aria-label="Food emoji">🍰</button>
+    <button type="button" class="snack snack-d" data-depth="1" aria-label="Food emoji">🍙</button>
+    <button type="button" class="snack snack-e" data-depth="0.65" aria-label="Food emoji">🍓</button>
   </div>
 </section>
 
@@ -35,5 +35,5 @@
   </ul>
 </div>
 {% endif %}
-<script src="/static/home-snacks.js" defer></script>
+<script src="/static/home-snacks.js?v=ucla-2" defer></script>
 {% endblock %}

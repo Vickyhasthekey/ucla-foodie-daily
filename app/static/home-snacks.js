@@ -6,11 +6,24 @@
   const snacks = Array.from(field.querySelectorAll(".snack"));
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const max = 6; // stay inside the snack rail
+  const FOODS = [
+    "🍜", "🍔", "🌮", "🍕", "🍓", "🍩", "🥑", "🍣", "🍰", "🍦",
+    "🍇", "🍉", "🍒", "🥐", "🥗", "🍤", "🍱", "🍪", "🫐", "🥭",
+    "🥝", "🍎", "🥨", "🥞", "🧋", "🥟", "🍙",
+  ];
   let targetX = 0;
   let targetY = 0;
   let curX = 0;
   let curY = 0;
   let listening = false;
+
+  function nextFood(current) {
+    let pick = current;
+    for (let i = 0; i < 8 && pick === current; i += 1) {
+      pick = FOODS[Math.floor(Math.random() * FOODS.length)];
+    }
+    return pick;
+  }
 
   function paint() {
     snacks.forEach((el) => {
@@ -45,7 +58,6 @@
     if (!accel) return;
     const shake = Math.hypot(accel.x || 0, accel.y || 0, accel.z || 0);
     if (shake < 12) return;
-    // Soft wobble only — not a full scatter.
     targetX = clamp(targetX + (Math.random() * 6 - 3));
     targetY = clamp(targetY + (Math.random() * 6 - 3));
   }
@@ -79,6 +91,22 @@
       /* ignore */
     }
   }
+
+  snacks.forEach((el) => {
+    el.addEventListener("click", (event) => {
+      event.preventDefault();
+      el.textContent = nextFood(el.textContent.trim());
+      if (reduced) return;
+      el.animate(
+        [
+          { transform: "scale(1) rotate(0deg)" },
+          { transform: "scale(1.28) rotate(-10deg)", offset: 0.35 },
+          { transform: "scale(1) rotate(0deg)" },
+        ],
+        { duration: 480, easing: "cubic-bezier(0.22, 0.75, 0.2, 1)" }
+      );
+    });
+  });
 
   if (!reduced) {
     requestAnimationFrame(tick);

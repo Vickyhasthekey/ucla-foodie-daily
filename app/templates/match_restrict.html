@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Find your dining match! · UCLA Foodie Daily{% endblock %}
 {% block body %}
-<h1>Find your dining match!</h1>
-<p class="lede">First, what should we skip?</p>
+<div class="page-panel">
+  <h1>Find your dining match!</h1>
+  <p class="lede">First, what should we skip?</p>
+</div>
 <form class="card" method="post" action="/match/restrict">
   <h2>Allergies</h2>
   <div class="chip-grid">

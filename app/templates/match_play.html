@@ -2,14 +2,16 @@
 {% block title %}Find your dining match! · UCLA Foodie Daily{% endblock %}
 {% block body %}
 <div class="match-emoji-field">
-  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Ramen bounce"><span class="match-emoji-face">🍜</span></button>
-  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Burger bounce"><span class="match-emoji-face">🍔</span></button>
-  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Taco bounce"><span class="match-emoji-face">🌮</span></button>
-  <button type="button" class="match-emoji" data-depth="1" aria-label="Pizza bounce"><span class="match-emoji-face">🍕</span></button>
-  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Ice cream bounce"><span class="match-emoji-face">🍦</span></button>
+  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Food emoji"><span class="match-emoji-face">🍜</span></button>
+  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Food emoji"><span class="match-emoji-face">🍔</span></button>
+  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Food emoji"><span class="match-emoji-face">🌮</span></button>
+  <button type="button" class="match-emoji" data-depth="1" aria-label="Food emoji"><span class="match-emoji-face">🍕</span></button>
+  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Food emoji"><span class="match-emoji-face">🍦</span></button>
 </div>
-<h1>Find your dining match!</h1>
-<p class="lede" id="play-lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck{% if meal_filter %} · {{ meal_filter | join(", ") }}{% endif %}</p>
+<div class="page-panel">
+  <h1>Find your dining match!</h1>
+  <p class="lede" id="play-lede">Like {{ like_target }} dishes. {{ liked_count }} liked · {{ remaining }} left in deck{% if meal_filter %} · {{ meal_filter | join(", ") }}{% endif %}</p>
+</div>
 {% if card %}
 <section class="hinge-stage" aria-label="Dish card">
   <div class="hinge-stack" id="hinge-stack" data-name="{{ card.name }}">
@@ -72,7 +74,7 @@
 <p class="note"><a href="/match?edit=1">Edit restrictions</a></p>
 {% endif %}
 <p class="note"><a href="/">Back to search</a></p>
-<script src="/static/match-emojis.js?v=5" defer></script>
+<script src="/static/match-emojis.js?v=ucla-2" defer></script>
 {% if show_save_prompt %}
 <dialog class="save-prompt" open>
   <form method="dialog" class="card">

@@ -2,28 +2,30 @@
 {% block title %}Today · UCLA Foodie Daily{% endblock %}
 {% block body %}
 <div class="match-emoji-field">
-  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Strawberry bounce"><span class="match-emoji-face">🍓</span></button>
-  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Watermelon bounce"><span class="match-emoji-face">🍉</span></button>
-  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Grapes bounce"><span class="match-emoji-face">🍇</span></button>
-  <button type="button" class="match-emoji" data-depth="1" aria-label="Cake bounce"><span class="match-emoji-face">🍰</span></button>
-  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Donut bounce"><span class="match-emoji-face">🍩</span></button>
-  <button type="button" class="match-emoji" data-depth="0.85" aria-label="Cherry bounce"><span class="match-emoji-face">🍒</span></button>
+  <button type="button" class="match-emoji" data-depth="0.6" aria-label="Food emoji"><span class="match-emoji-face">🍓</span></button>
+  <button type="button" class="match-emoji" data-depth="0.9" aria-label="Food emoji"><span class="match-emoji-face">🍉</span></button>
+  <button type="button" class="match-emoji" data-depth="0.7" aria-label="Food emoji"><span class="match-emoji-face">🍇</span></button>
+  <button type="button" class="match-emoji" data-depth="1" aria-label="Food emoji"><span class="match-emoji-face">🍰</span></button>
+  <button type="button" class="match-emoji" data-depth="0.75" aria-label="Food emoji"><span class="match-emoji-face">🍩</span></button>
+  <button type="button" class="match-emoji" data-depth="0.85" aria-label="Food emoji"><span class="match-emoji-face">🍒</span></button>
 </div>
-<h1>Your matching dining hall today</h1>
-<div class="wish-row">
-  <p class="lede">{{ date_label }} · {{ wish }}</p>
-  {% if wish_save %}
-  {% if account %}
-  <form method="post" action="/favorite">
-    <input type="hidden" name="wish" value="{{ wish }}">
-    <button type="submit" class="save {% if wish_saved %}saved{% endif %}">{% if wish_saved %}Saved{% else %}Save{% endif %}</button>
-  </form>
-  {% else %}
-  <a class="save" href="/account?next={{ ('/today?wish=' ~ wish ~ '&save=' ~ wish_save) | urlencode }}">Save</a>
-  {% endif %}
-  {% endif %}
+<div class="page-panel">
+  <h1>Your matching dining hall today</h1>
+  <div class="wish-row">
+    <p class="lede">{{ date_label }} · {{ wish }}</p>
+    {% if wish_save %}
+    {% if account %}
+    <form method="post" action="/favorite">
+      <input type="hidden" name="wish" value="{{ wish }}">
+      <button type="submit" class="save {% if wish_saved %}saved{% endif %}">{% if wish_saved %}Saved{% else %}Save{% endif %}</button>
+    </form>
+    {% else %}
+    <a class="save" href="/account?next={{ ('/today?wish=' ~ wish ~ '&save=' ~ wish_save) | urlencode }}">Save</a>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% if also %}<p class="meta">Also matching what you always want: {{ also | join(", ") }}</p>{% endif %}
 </div>
-{% if also %}<p class="meta">Also matching what you always want: {{ also | join(", ") }}</p>{% endif %}
 
 {% if meals and meals|selectattr("halls")|list %}
 <form method="post" action="/plan">
@@ -64,7 +66,7 @@
 {% endif %}
 
 <p class="note"><a href="/?wish={{ wish_query }}">Change it</a></p>
-<script src="/static/match-emojis.js?v=5" defer></script>
+<script src="/static/match-emojis.js?v=ucla-2" defer></script>
 <script>
 document.querySelectorAll("label.meal-hall input[type=radio]").forEach((radio) => {
   radio.dataset.on = radio.checked ? "1" : "0";
