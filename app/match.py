@@ -1,7 +1,13 @@
 import re
 
 CONCEPTS = [
-    {"id": "beef", "label": "Beef", "text": "beef steak bulgogi brisket carne asada", "words": ["beef", "steak", "bulgogi", "brisket", "carne asada", "ribeye", "sirloin"]},
+    {
+        "id": "beef",
+        "label": "Beef",
+        "text": "beef steak bulgogi brisket carne asada ribeye sirloin",
+        # Longer phrases first in spirit; recommend() also sorts by length.
+        "words": ["carne asada", "ribeye", "sirloin", "bulgogi", "brisket", "steak", "beef", "carne", "asada"],
+    },
     {"id": "chicken", "label": "Chicken", "text": "chicken poultry turkey", "words": ["chicken", "turkey"]},
     {"id": "fish", "label": "Fish", "text": "fish salmon seafood shrimp tuna", "words": ["salmon", "fish", "lox", "shrimp", "tuna"]},
     {"id": "sweet", "label": "Sweet breakfast", "text": "sweet breakfast pancakes french toast waffles", "words": ["pancake", "french toast", "waffle", "cinnamon"]},
@@ -27,10 +33,20 @@ STOPWORDS = {
 }
 
 
+def _normalize_food_text(text):
+    text = (text or "").lower()
+    text = re.sub(r"[-_/]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def _contains(dish_name, needle):
+    name = _normalize_food_text(dish_name)
+    needle = _normalize_food_text(needle)
+    if not needle:
+        return False
     return re.search(
         rf"(?<![a-z]){re.escape(needle)}s?(?![a-z])",
-        dish_name.lower(),
+        name,
     ) is not None
 
 
@@ -117,6 +133,8 @@ def recommend(dishes, wish, score_fn=None):
             for score, concept in zip(concept_scores, CONCEPTS):
                 if score >= best - 0.02:
                     words.extend(concept["words"])
+        # Prefer longer synonyms first so "carne asada" is not starved by "beef"/"steak".
+        words = sorted(dict.fromkeys(words), key=len, reverse=True)
         typed = content_tokens(part)
         ranked = []
         for index, item in enumerate(grouped):

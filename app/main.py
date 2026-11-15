@@ -681,8 +681,3 @@ def match_save_plan(
     response = RedirectResponse("/", status_code=303)
     clear_swipe_cookie(response)
     return response
-
-
-@app.get("/health")
-def health():
-    return {"ok": True}

@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Foodie Daily · visual prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@450;600;700&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f3ea;
+      --ink: #1a2b3c;
+      --muted: #5c6b7a;
+      --card: rgba(255, 253, 248, 0.96);
+      --ucla-blue: #2774ae;
+      --ucla-blue-deep: #005587;
+      --ucla-gold: #ffd100;
+      --ucla-gold-soft: #ffe566;
+      --panel: rgba(247, 243, 234, 0.9);
+      --panel-strong: rgba(247, 243, 234, 0.94);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Nunito", sans-serif;
+      background:
+        linear-gradient(180deg, rgba(39, 116, 174, 0.06), transparent 28%),
+        radial-gradient(ellipse 70% 45% at 92% 8%, rgba(255, 209, 0, 0.18), transparent 55%),
+        var(--bg);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0.14;
+      mix-blend-mode: multiply;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    }
+
+    .proto-bar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 22px;
+      font-size: 13px;
+      color: var(--muted);
+      border-bottom: 3px solid var(--ucla-gold);
+      background: var(--panel-strong);
+      backdrop-filter: blur(10px);
+    }
+
+    .proto-bar strong { color: var(--ucla-blue-deep); }
+    .proto-bar a { color: var(--ucla-blue); font-weight: 700; }
+
+    .stage {
+      position: relative;
+      width: min(1100px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 80px;
+      min-height: 78vh;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 5;
+      max-width: 34rem;
+      padding: 22px 24px 24px;
+      border-radius: 28px;
+      background: var(--panel);
+      border: 1px solid rgba(39, 116, 174, 0.12);
+      box-shadow:
+        0 18px 40px rgba(0, 85, 135, 0.08),
+        inset 0 0 0 1px rgba(255, 209, 0, 0.25);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      margin: 0 0 10px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(34px, 6vw, 52px);
+      line-height: 1.02;
+      color: var(--ucla-blue-deep);
+    }
+
+    .brand span {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .headline {
+      margin: 0 0 14px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(28px, 4.6vw, 40px);
+      line-height: 1.12;
+      font-weight: 600;
+      color: var(--ink);
+      max-width: 15ch;
+    }
+
+    .headline em {
+      font-style: normal;
+      color: var(--ucla-blue);
+      box-shadow: inset 0 -0.22em 0 var(--ucla-gold-soft);
+    }
+
+    .lede {
+      margin: 0 0 22px;
+      color: var(--muted);
+      max-width: 36ch;
+      font-size: 16px;
+    }
+
+    .search {
+      background: var(--card);
+      border-radius: 22px;
+      padding: 18px 18px 20px;
+      box-shadow: 0 12px 28px rgba(0, 85, 135, 0.06);
+      border: 1px solid rgba(39, 116, 174, 0.1);
+      max-width: 420px;
+    }
+
+    .search input {
+      width: 100%;
+      border: 1px solid rgba(39, 116, 174, 0.14);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      background: white;
+    }
+
+    .search button {
+      margin-top: 14px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      font-weight: 700;
+      background: var(--ucla-blue);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .search button:hover { background: var(--ucla-blue-deep); }
+
+    .ghost {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ucla-blue);
+      color: var(--ucla-blue-deep);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    /* Emojis only in the right margin — never behind text */
+    .emoji-field {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 140px;
+      left: 58%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .emoji {
+      position: absolute;
+      left: var(--x);
+      top: var(--y);
+      display: grid;
+      place-items: center;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: auto;
+      font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+      font-size: var(--size, 72px);
+      line-height: 1;
+      filter: drop-shadow(0 10px 18px rgba(0, 85, 135, 0.12));
+      animation: float var(--dur, 8s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .emoji:focus-visible { outline: none; }
+
+    .rail-note {
+      position: relative;
+      z-index: 5;
+      display: inline-block;
+      margin-top: 28px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 46ch;
+      background: var(--panel);
+      border: 1px solid rgba(39, 116, 174, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .emoji-row {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 24px;
+      background: var(--panel);
+      border: 1px solid rgba(39, 116, 174, 0.1);
+      box-shadow: inset 0 -3px 0 var(--ucla-gold);
+      backdrop-filter: blur(10px);
+    }
+
+    .emoji-row .emoji {
+      position: relative;
+      left: auto;
+      top: auto;
+      font-size: clamp(48px, 8vw, 68px);
+    }
+
+    @keyframes float {
+      0%, 100% { translate: 0 0; rotate: -2deg; }
+      50% { translate: 0 -8px; rotate: 2deg; }
+    }
+
+    @media (max-width: 720px) {
+      .emoji-field { left: 64%; }
+      .emoji.desktop-only { display: none; }
+      .hero-copy { background: var(--panel-strong); }
+    }
+  </style>
+</head>
+<body>
+  <div class="proto-bar">
+    <div><strong>UCLA × Foodie prototype</strong> · blue/gold + simple emoji · semi-opaque panels</div>
+    <div><a href="/">← back to live home</a></div>
+  </div>
+
+  <div class="stage">
+    <div class="emoji-field" aria-hidden="true">
+      <button class="emoji desktop-only" type="button" style="--x:12%; --y:6%; --size:88px; --delay:0s" aria-label="Avocado">🥑</button>
+      <button class="emoji" type="button" style="--x:48%; --y:22%; --size:76px; --delay:-1.2s" aria-label="Sushi">🍣</button>
+      <button class="emoji desktop-only" type="button" style="--x:8%; --y:48%; --size:70px; --delay:-2.4s" aria-label="Ramen">🍜</button>
+      <button class="emoji" type="button" style="--x:52%; --y:68%; --size:72px; --delay:-0.8s" aria-label="Cake">🍰</button>
+    </div>
+
+    <div class="hero-copy">
+      <p class="brand">UCLA <span>Foodie Daily</span></p>
+      <h1 class="headline">Find your <em>matching</em> dining hall today.</h1>
+      <p class="lede">Simple Google-style food emoji in the empty margin only. Text sits on a ~90% opaque frosted panel so nothing shows through the words.</p>
+      <form class="search" action="/" method="get" onsubmit="event.preventDefault();">
+        <input name="wish" placeholder="beef, salmon, tiramisu" value="salmon">
+        <button type="submit">See today's hall</button>
+      </form>
+      <a class="ghost" href="/match">Not sure? Swipe dishes</a>
+    </div>
+
+    <p class="rail-note">UCLA cues: blue type, gold bar, blue CTA. Click an emoji to swap it for another food.</p>
+
+    <div class="emoji-row">
+      <button class="emoji" type="button" style="--delay:0s" aria-label="Ramen">🍜</button>
+      <button class="emoji" type="button" style="--delay:-1s" aria-label="Burger">🍔</button>
+      <button class="emoji" type="button" style="--delay:-2s" aria-label="Taco">🌮</button>
+      <button class="emoji" type="button" style="--delay:-0.5s" aria-label="Pizza">🍕</button>
+      <button class="emoji" type="button" style="--delay:-2.8s" aria-label="Strawberry">🍓</button>
+      <button class="emoji" type="button" style="--delay:-1.6s" aria-label="Donut">🍩</button>
+    </div>
+  </div>
+
+  <script>
+    const FOODS = [
+      "🍜", "🍔", "🌮", "🍕", "🍓", "🍩", "🥑", "🍣", "🍰", "🍦",
+      "🍇", "🍉", "🍒", "🥐", "🥗", "🍤", "🍱", "🍪", "🫐", "🥭",
+      "🥝", "🍎", "🥨", "🥞", "🧋", "🥟",
+    ];
+
+    function nextFood(current) {
+      let pick = current;
+      for (let i = 0; i < 8 && pick === current; i += 1) {
+        pick = FOODS[Math.floor(Math.random() * FOODS.length)];
+      }
+      return pick;
+    }
+
+    document.querySelectorAll(".emoji").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        btn.textContent = nextFood(btn.textContent.trim());
+        btn.animate(
+          [
+            { transform: "scale(1) rotate(0deg)" },
+            { transform: "scale(1.28) rotate(-10deg)", offset: 0.35 },
+            { transform: "scale(1) rotate(0deg)" },
+          ],
+          { duration: 480, easing: "cubic-bezier(0.22, 0.75, 0.2, 1)" }
+        );
+      });
+    });
+  </script>
+</body>
+</html>

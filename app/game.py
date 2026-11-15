@@ -42,8 +42,8 @@ RULE_BLOCK = {
     "no_pork": ["pork", "bacon", "ham", "sausage"],
 }
 
-VEGAN_BLOCK = ["chicken", "turkey", "beef", "steak", "pork", "bacon", "ham", "sausage", "fish", "salmon", "shrimp", "tuna", "egg", "omelet", "yogurt", "cheese", "milk", "butter", "cream"]
-VEGETARIAN_BLOCK = ["chicken", "turkey", "beef", "steak", "pork", "bacon", "ham", "sausage", "fish", "salmon", "shrimp", "tuna"]
+VEGAN_BLOCK = ["chicken", "turkey", "beef", "steak", "pork", "bacon", "ham", "sausage", "fish", "salmon", "shrimp", "tuna", "egg", "omelet", "yogurt", "cheese", "milk", "butter", "cream", "carne", "asada", "bulgogi", "brisket"]
+VEGETARIAN_BLOCK = ["chicken", "turkey", "beef", "steak", "pork", "bacon", "ham", "sausage", "fish", "salmon", "shrimp", "tuna", "carne", "asada", "bulgogi", "brisket"]
 
 POPULAR_CONCEPT_IDS = ["beef", "chicken", "fish", "dessert", "noodles", "vegetables"]
 
