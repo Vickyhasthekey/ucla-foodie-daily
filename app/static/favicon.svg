@@ -1,25 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hungry Foodie bear with fish">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Bear face with fish">
   <circle cx="32" cy="32" r="30" fill="#FFF4D6"/>
-  <!-- Bear body (UCLA blue) -->
-  <ellipse cx="30" cy="38" rx="16" ry="14" fill="#2774AE"/>
+  <!-- Ears -->
+  <circle cx="14" cy="16" r="9" fill="#A66B2F"/>
+  <circle cx="50" cy="16" r="9" fill="#A66B2F"/>
+  <circle cx="14" cy="16" r="5" fill="#E8A87C"/>
+  <circle cx="50" cy="16" r="5" fill="#E8A87C"/>
   <!-- Head -->
-  <circle cx="38" cy="26" r="12" fill="#2774AE"/>
-  <!-- Ear -->
-  <circle cx="30" cy="16" r="5" fill="#2774AE"/>
-  <circle cx="30" cy="16" r="2.5" fill="#1E5A8A"/>
-  <!-- Snout -->
-  <ellipse cx="48" cy="28" rx="6" ry="5" fill="#2774AE"/>
-  <!-- Eye -->
-  <circle cx="40" cy="23" r="2.2" fill="#0F2F4A"/>
-  <circle cx="40.7" cy="22.3" r="0.7" fill="#FFF"/>
-  <!-- Legs hint -->
-  <ellipse cx="22" cy="48" rx="4" ry="6" fill="#2774AE"/>
-  <ellipse cx="34" cy="50" rx="4" ry="5" fill="#2774AE"/>
-  <!-- Gold fish in mouth -->
-  <ellipse cx="54" cy="30" rx="9" ry="4.2" fill="#FFD100"/>
-  <circle cx="59" cy="29" r="1.1" fill="#1E5A8A"/>
-  <path d="M45 30c2.5-3 2.5 3 0 0z" fill="#FFD100"/>
-  <path d="M46.5 27.5c-2 0-3.5 1.2-3.5 2.5s1.5 2.5 3.5 2.5" fill="#F5C400"/>
-  <!-- Tail fins -->
-  <path d="M45 30l-5-4v8z" fill="#FFD100"/>
+  <circle cx="32" cy="34" r="22" fill="#A66B2F"/>
+  <!-- Muzzle -->
+  <ellipse cx="32" cy="40" rx="11" ry="8" fill="#F3D5B5"/>
+  <!-- Eyes -->
+  <circle cx="23.5" cy="29" r="3.2" fill="#2A1A10"/>
+  <circle cx="40.5" cy="29" r="3.2" fill="#2A1A10"/>
+  <circle cx="24.4" cy="28" r="1.1" fill="#FFF"/>
+  <circle cx="41.4" cy="28" r="1.1" fill="#FFF"/>
+  <!-- Nose -->
+  <ellipse cx="32" cy="36.5" rx="3" ry="2.2" fill="#3A2214"/>
+  <!-- Blush -->
+  <ellipse cx="18.5" cy="36" rx="3" ry="1.7" fill="#E8A87C" opacity=".9"/>
+  <ellipse cx="45.5" cy="36" rx="3" ry="1.7" fill="#E8A87C" opacity=".9"/>
+  <!-- Horizontal gold fish in front of face -->
+  <ellipse cx="32" cy="48" rx="18" ry="6.5" fill="#FFD100"/>
+  <ellipse cx="32" cy="48" rx="14" ry="4.2" fill="#FFE566" opacity=".55"/>
+  <!-- Fish eye -->
+  <circle cx="46" cy="47" r="1.6" fill="#1E5A8A"/>
+  <circle cx="46.5" cy="46.5" r="0.55" fill="#FFF"/>
+  <!-- Tail (left) -->
+  <path d="M14 48 L6 42 L8 48 L6 54 Z" fill="#FFD100"/>
+  <!-- Fin -->
+  <path d="M28 42 Q32 38 36 42" fill="none" stroke="#E6B800" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
