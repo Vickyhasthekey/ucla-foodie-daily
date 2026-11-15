@@ -4,7 +4,7 @@ from urllib.parse import quote
 from typing import Annotated
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -60,6 +60,16 @@ ROOT = Path(__file__).resolve().parent
 app = FastAPI(title="UCLA Foodie Daily")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 templates = Jinja2Templates(directory=ROOT / "templates")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon_ico():
+    return FileResponse(ROOT / "static" / "favicon.ico")
+
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+def apple_touch_icon():
+    return FileResponse(ROOT / "static" / "apple-touch-icon.png")
 
 
 def viewer(request):
